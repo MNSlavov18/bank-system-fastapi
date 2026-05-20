@@ -35,3 +35,4 @@ Run:
 ```powershell
 pip install fastapi uvicorn sqlalchemy pymysql cryptography alembic pydantic pydantic-settings python-dotenv jinja2 python-multipart pytest
 pip freeze > requirements.txt
+alembic upgrade head
