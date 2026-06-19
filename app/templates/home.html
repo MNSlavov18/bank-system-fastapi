@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <h1>Bank System</h1>
+        <p class="subtitle">Manage clients, bank accounts and loans.</p>
+
+        {% if message %}
+            <div class="alert success">{{ message }}</div>
+            <p>User ID: {{ user_id }}</p>
+            <p>Client ID: {{ client_id }}</p>
+        {% endif %}
+
+        <div class="choice">
+            <a class="link-button" href="/register">Register</a>
+            <a class="link-button" href="/login">Login</a>
+            <a class="link-button" href="/docs">API Docs</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

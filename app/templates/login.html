@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <h1>Welcome back</h1>
+        <p class="subtitle">Login to your bank account.</p>
+
+        {% if registered %}
+            <div class="alert success">Registration successful. You can now log in.</div>
+        {% endif %}
+
+        {% if error %}
+            <div class="alert error">{{ error }}</div>
+        {% endif %}
+
+        <form class="form" method="post" action="/login">
+            <input name="email" placeholder="Email" required>
+            <input name="password" type="password" placeholder="Password" required>
+            <button class="primary" type="submit">Login</button>
+        </form>
+
+        <p class="footer-link">
+            No account? <a href="/register">Register</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>

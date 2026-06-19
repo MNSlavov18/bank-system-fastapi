@@ -1,0 +1,147 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: linear-gradient(135deg, #e8f5e9, #e3f2fd, #fff8e1);
+    min-height: 100vh;
+    color: #1f2937;
+}
+
+.page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.card {
+    width: 100%;
+    max-width: 430px;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 24px;
+    padding: 36px;
+    box-shadow: 0 20px 60px rgba(31, 41, 55, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.card.wide {
+    max-width: 720px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 32px;
+    color: #0f766e;
+}
+
+h2 {
+    margin-top: 24px;
+    color: #2563eb;
+}
+
+.subtitle {
+    color: #64748b;
+    margin-bottom: 28px;
+}
+
+.choice {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.choice button,
+.link-button {
+    flex: 1;
+    min-width: 180px;
+    border: none;
+    border-radius: 14px;
+    padding: 13px 18px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+}
+
+.choice button.selected {
+    background: #0f766e;
+    color: white;
+}
+
+.form {
+    display: grid;
+    gap: 14px;
+}
+
+input {
+    width: 100%;
+    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    padding: 13px 15px;
+    font-size: 15px;
+    outline: none;
+    background: #f8fafc;
+}
+
+input:focus {
+    border-color: #22c55e;
+    background: white;
+}
+
+.primary {
+    margin-top: 8px;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #16a34a, #0284c7);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primary:hover,
+.choice button:hover,
+.link-button:hover {
+    opacity: 0.9;
+}
+
+.hidden {
+    display: none;
+}
+
+.alert {
+    padding: 12px 14px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    font-weight: 600;
+}
+
+.alert.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.alert.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.footer-link {
+    text-align: center;
+    margin-top: 24px;
+    color: #64748b;
+}
+
+.footer-link a {
+    color: #0f766e;
+    font-weight: 700;
+    text-decoration: none;
+}

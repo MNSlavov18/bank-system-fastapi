@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page">
+    <div class="card wide">
+        <h1>Create account</h1>
+        <p class="subtitle">Choose your client type and fill in the required information.</p>
+
+        {% if error %}
+            <div class="alert error">{{ error }}</div>
+        {% endif %}
+
+        <div class="choice">
+            <button type="button" onclick="showForm('individual')" id="individualBtn">Individual client</button>
+            <button type="button" onclick="showForm('corporate')" id="corporateBtn">Corporate client</button>
+        </div>
+
+        <form id="individualForm" class="form hidden" method="post" action="/register/individual">
+            <h2>Individual client</h2>
+
+            <input name="email" placeholder="Email" required>
+            <input name="password" type="password" placeholder="Password" required>
+            <input name="phone_number" placeholder="Phone number" required>
+            <input name="address" placeholder="Address" required>
+            <input name="egn" placeholder="EGN" required>
+            <input name="first_name" placeholder="First name" required>
+            <input name="last_name" placeholder="Last name" required>
+            <input name="birth_date" type="date" required>
+
+            <button class="primary" type="submit">Create individual account</button>
+        </form>
+
+        <form id="corporateForm" class="form hidden" method="post" action="/register/corporate">
+            <h2>Corporate client</h2>
+
+            <input name="email" placeholder="Email" required>
+            <input name="password" type="password" placeholder="Password" required>
+            <input name="phone_number" placeholder="Phone number" required>
+            <input name="address" placeholder="Address" required>
+            <input name="eik" placeholder="EIK" required>
+            <input name="name" placeholder="Company name" required>
+            <input name="representative_name" placeholder="Representative name" required>
+
+            <button class="primary" type="submit">Create corporate account</button>
+        </form>
+
+        <p class="footer-link">
+            Already have an account? <a href="/login">Login</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    function showForm(type) {
+        const individualForm = document.getElementById("individualForm");
+        const corporateForm = document.getElementById("corporateForm");
+        const individualBtn = document.getElementById("individualBtn");
+        const corporateBtn = document.getElementById("corporateBtn");
+
+        individualForm.classList.add("hidden");
+        corporateForm.classList.add("hidden");
+        individualBtn.classList.remove("selected");
+        corporateBtn.classList.remove("selected");
+
+        if (type === "individual") {
+            individualForm.classList.remove("hidden");
+            individualBtn.classList.add("selected");
+        } else {
+            corporateForm.classList.remove("hidden");
+            corporateBtn.classList.add("selected");
+        }
+    }
+</script>
+</body>
+</html>
