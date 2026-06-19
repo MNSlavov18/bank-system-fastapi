@@ -18,8 +18,8 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @app.get("/")
-def home():
-    return {"message": "Bank System API is running"}
+def home(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
 
 
 @app.get("/health")
