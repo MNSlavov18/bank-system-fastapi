@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 
-from app.routers import auth, pages
+from app.routers import auth, pages, accounts, clients
 
 app = FastAPI(
     title="Bank System API",
@@ -10,8 +11,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="bank-system-secret-key"
+)
+
 app.include_router(auth.router)
 app.include_router(pages.router)
+app.include_router(accounts.router)
+app.include_router(clients.router)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
@@ -19,7 +27,11 @@ templates = Jinja2Templates(directory="app/templates")
 
 @app.get("/")
 def home(request: Request):
-    return templates.TemplateResponse("home.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="home.html",
+        context={}
+    )
 
 
 @app.get("/health")

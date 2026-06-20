@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <h1>Dashboard</h1>
+        <p class="subtitle">Welcome to your bank profile.</p>
+
+        <div class="alert success">
+            You are logged in.
+        </div>
+
+        <p>User ID: {{ user_id }}</p>
+        <p>Client ID: {{ client_id }}</p>
+
+        <div class="choice">
+            <a class="link-button" href="/accounts">My Accounts</a>
+            <a class="link-button" href="/docs">API Docs</a>
+            <a class="link-button" href="/logout">Logout</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
