@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.routers import auth, pages, accounts, clients
+from app.routers import auth, pages, accounts, clients, credit_types
 
 app = FastAPI(
     title="Bank System API",
@@ -20,6 +20,8 @@ app.include_router(auth.router)
 app.include_router(pages.router)
 app.include_router(accounts.router)
 app.include_router(clients.router)
+app.include_router(credit_types.router)
+
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")

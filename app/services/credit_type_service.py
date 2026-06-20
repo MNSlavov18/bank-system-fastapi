@@ -1,0 +1,109 @@
+from decimal import Decimal
+
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.models.credit import CreditType
+from app.models.enums import CreditTypeName
+from app.schemas.credit_type import CreditTypeCreateRequest, CreditTypeUpdateRequest
+
+
+def get_all_credit_types(db: Session) -> list[CreditType]:
+    return db.query(CreditType).order_by(CreditType.credit_type_id.asc()).all()
+
+
+def get_credit_type_by_id(credit_type_id: int, db: Session) -> CreditType:
+    credit_type = db.query(CreditType).filter(
+        CreditType.credit_type_id == credit_type_id
+    ).first()
+
+    if not credit_type:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Credit type not found."
+        )
+
+    return credit_type
+
+
+def create_credit_type(data: CreditTypeCreateRequest, db: Session) -> CreditType:
+    existing_credit_type = db.query(CreditType).filter(
+        CreditType.type_name == data.type_name
+    ).first()
+
+    if existing_credit_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Credit type already exists."
+        )
+
+    credit_type = CreditType(
+        type_name=data.type_name,
+        interest_rate=data.interest_rate,
+        max_amount=data.max_amount,
+        max_term_months=data.max_term_months
+    )
+
+    db.add(credit_type)
+    db.commit()
+    db.refresh(credit_type)
+
+    return credit_type
+
+
+def seed_credit_types(db: Session) -> list[CreditType]:
+    default_credit_types = [
+        {
+            "type_name": CreditTypeName.CONSUMER,
+            "interest_rate": Decimal("8.50"),
+            "max_amount": Decimal("50000.00"),
+            "max_term_months": 84
+        },
+        {
+            "type_name": CreditTypeName.MORTGAGE,
+            "interest_rate": Decimal("4.20"),
+            "max_amount": Decimal("300000.00"),
+            "max_term_months": 360
+        }
+    ]
+
+    for item in default_credit_types:
+        existing_credit_type = db.query(CreditType).filter(
+            CreditType.type_name == item["type_name"]
+        ).first()
+
+        if not existing_credit_type:
+            credit_type = CreditType(
+                type_name=item["type_name"],
+                interest_rate=item["interest_rate"],
+                max_amount=item["max_amount"],
+                max_term_months=item["max_term_months"]
+            )
+
+            db.add(credit_type)
+
+    db.commit()
+
+    return get_all_credit_types(db)
+
+
+def update_credit_type(
+    credit_type_id: int,
+    data: CreditTypeUpdateRequest,
+    db: Session
+) -> CreditType:
+    credit_type = get_credit_type_by_id(credit_type_id, db)
+
+    if data.interest_rate is not None:
+        credit_type.interest_rate = data.interest_rate
+
+    if data.max_amount is not None:
+        credit_type.max_amount = data.max_amount
+
+    if data.max_term_months is not None:
+        credit_type.max_term_months = data.max_term_months
+
+    db.commit()
+    db.refresh(credit_type)
+
+    return credit_type
