@@ -5,24 +5,44 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<div class="page">
-    <div class="card">
-        <h1>Dashboard</h1>
-        <p class="subtitle">Welcome to your bank profile.</p>
+<div class="app-shell">
+    <aside class="sidebar">
+        <h1>Bank System</h1>
+        <p class="subtitle">Client ID: {{ client_id }}</p>
 
-        <div class="alert success">
-            You are logged in.
-        </div>
+        <nav class="menu">
+            <a class="active" href="/dashboard">Dashboard</a>
+            <a href="/my-accounts">My Accounts</a>
+            <a href="/docs">API Docs</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
 
-        <p>User ID: {{ user_id }}</p>
-        <p>Client ID: {{ client_id }}</p>
+    <main class="content">
+        <section class="panel">
+            <h1>Dashboard</h1>
+            <p class="subtitle">Welcome to your bank profile.</p>
 
-        <div class="choice">
-            <a class="link-button" href="/accounts">My Accounts</a>
-            <a class="link-button" href="/docs">API Docs</a>
-            <a class="link-button" href="/logout">Logout</a>
-        </div>
-    </div>
+            <div class="alert success">
+                You are logged in.
+            </div>
+
+            <div class="dashboard-grid">
+                <a class="dashboard-tile" href="/my-accounts">
+                    <strong>My Accounts</strong>
+                    <span>View your bank accounts and open a new one.</span>
+                </a>
+                <a class="dashboard-tile" href="/request-credit">
+                    <strong>Request Credit</strong>
+                    <span>Apply for consumer credit or mortgage.</span>
+                </a>
+                <a class="dashboard-tile muted" href="/docs">
+                    <strong>API Docs</strong>
+                    <span>Inspect the current backend endpoints.</span>
+                </a>
+            </div>
+        </section>
+    </main>
 </div>
 </body>
 </html>

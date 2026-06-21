@@ -2,11 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
-from app.schemas.credit_type import (
-    CreditTypeCreateRequest,
-    CreditTypeResponse,
-    CreditTypeUpdateRequest
-)
+from app.schemas.credit_type import CreditTypeResponse
 from app.services import credit_type_service
 
 
@@ -21,14 +17,6 @@ def get_all_credit_types(db: Session = Depends(get_db)):
     return credit_type_service.get_all_credit_types(db)
 
 
-@router.post("", response_model=CreditTypeResponse)
-def create_credit_type(
-    data: CreditTypeCreateRequest,
-    db: Session = Depends(get_db)
-):
-    return credit_type_service.create_credit_type(data, db)
-
-
 @router.post("/seed", response_model=list[CreditTypeResponse])
 def seed_credit_types(db: Session = Depends(get_db)):
     return credit_type_service.seed_credit_types(db)
@@ -41,11 +29,3 @@ def get_credit_type_by_id(
 ):
     return credit_type_service.get_credit_type_by_id(credit_type_id, db)
 
-
-@router.patch("/{credit_type_id}", response_model=CreditTypeResponse)
-def update_credit_type(
-    credit_type_id: int,
-    data: CreditTypeUpdateRequest,
-    db: Session = Depends(get_db)
-):
-    return credit_type_service.update_credit_type(credit_type_id, data, db)

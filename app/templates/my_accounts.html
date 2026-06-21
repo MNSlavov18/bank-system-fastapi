@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Accounts | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <h1>Bank System</h1>
+        <p class="subtitle">Client ID: {{ client_id }}</p>
+
+        <nav class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a class="active" href="/my-accounts">My Accounts</a>
+            <a href="/request-credit">Request Credit</a>
+            <a href="/docs">API Docs</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <section class="panel">
+            <div class="section-header">
+                <div>
+                    <h1>My Accounts</h1>
+                    <p class="subtitle">Your active bank accounts are listed here.</p>
+                </div>
+            </div>
+
+            {% if opened %}
+                <div class="alert success">New account opened successfully.</div>
+            {% endif %}
+
+            {% if error %}
+                <div class="alert error">{{ error }}</div>
+            {% endif %}
+
+            {% if accounts %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>IBAN</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Opened</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in accounts %}
+                                <tr>
+                                    <td>{{ account.iban }}</td>
+                                    <td>{{ account.balance }} BGN</td>
+                                    <td><span class="status">{{ account.status.value }}</span></td>
+                                    <td>{{ account.opened_at }}</td>
+                                    <td>
+                                        <a class="table-link" href="/my-accounts/{{ account.account_id }}">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h2>No accounts yet</h2>
+                    <p class="subtitle">Open your first bank account to start using the system.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="panel compact">
+            <h2>Open New Account</h2>
+            <form class="form inline-form" method="post" action="/my-accounts/open">
+                <input name="initial_balance" type="number" min="0" step="0.01" value="0.00" required>
+                <button class="primary" type="submit">Open Account</button>
+            </form>
+        </section>
+    </main>
+</div>
+</body>
+</html>

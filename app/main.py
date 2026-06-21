@@ -3,7 +3,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.routers import auth, pages, accounts, clients, credit_types
+from app.database.database import SessionLocal
+from app.routers import auth, pages, accounts, clients, credit_types, loan_applications
+from app.services.credit_type_service import seed_credit_types
 
 app = FastAPI(
     title="Bank System API",
@@ -21,10 +23,21 @@ app.include_router(pages.router)
 app.include_router(accounts.router)
 app.include_router(clients.router)
 app.include_router(credit_types.router)
+app.include_router(loan_applications.router)
 
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+
+@app.on_event("startup")
+def seed_fixed_credit_types():
+    db = SessionLocal()
+
+    try:
+        seed_credit_types(db)
+    finally:
+        db.close()
 
 
 @app.get("/")

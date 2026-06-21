@@ -8,6 +8,20 @@ from app.models.enums import CreditTypeName
 from app.schemas.credit_type import CreditTypeCreateRequest, CreditTypeUpdateRequest
 
 
+FIXED_CREDIT_TYPES = {
+    CreditTypeName.CONSUMER: {
+        "interest_rate": Decimal("8.50"),
+        "max_amount": Decimal("50000.00"),
+        "max_term_months": 84
+    },
+    CreditTypeName.MORTGAGE: {
+        "interest_rate": Decimal("4.20"),
+        "max_amount": Decimal("300000.00"),
+        "max_term_months": 360
+    }
+}
+
+
 def get_all_credit_types(db: Session) -> list[CreditType]:
     return db.query(CreditType).order_by(CreditType.credit_type_id.asc()).all()
 
@@ -27,6 +41,12 @@ def get_credit_type_by_id(credit_type_id: int, db: Session) -> CreditType:
 
 
 def create_credit_type(data: CreditTypeCreateRequest, db: Session) -> CreditType:
+    if data.type_name not in FIXED_CREDIT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported credit type."
+        )
+
     existing_credit_type = db.query(CreditType).filter(
         CreditType.type_name == data.type_name
     ).first()
@@ -52,32 +72,21 @@ def create_credit_type(data: CreditTypeCreateRequest, db: Session) -> CreditType
 
 
 def seed_credit_types(db: Session) -> list[CreditType]:
-    default_credit_types = [
-        {
-            "type_name": CreditTypeName.CONSUMER,
-            "interest_rate": Decimal("8.50"),
-            "max_amount": Decimal("50000.00"),
-            "max_term_months": 84
-        },
-        {
-            "type_name": CreditTypeName.MORTGAGE,
-            "interest_rate": Decimal("4.20"),
-            "max_amount": Decimal("300000.00"),
-            "max_term_months": 360
-        }
-    ]
-
-    for item in default_credit_types:
+    for type_name, values in FIXED_CREDIT_TYPES.items():
         existing_credit_type = db.query(CreditType).filter(
-            CreditType.type_name == item["type_name"]
+            CreditType.type_name == type_name
         ).first()
 
-        if not existing_credit_type:
+        if existing_credit_type:
+            existing_credit_type.interest_rate = values["interest_rate"]
+            existing_credit_type.max_amount = values["max_amount"]
+            existing_credit_type.max_term_months = values["max_term_months"]
+        else:
             credit_type = CreditType(
-                type_name=item["type_name"],
-                interest_rate=item["interest_rate"],
-                max_amount=item["max_amount"],
-                max_term_months=item["max_term_months"]
+                type_name=type_name,
+                interest_rate=values["interest_rate"],
+                max_amount=values["max_amount"],
+                max_term_months=values["max_term_months"]
             )
 
             db.add(credit_type)
@@ -92,18 +101,7 @@ def update_credit_type(
     data: CreditTypeUpdateRequest,
     db: Session
 ) -> CreditType:
-    credit_type = get_credit_type_by_id(credit_type_id, db)
-
-    if data.interest_rate is not None:
-        credit_type.interest_rate = data.interest_rate
-
-    if data.max_amount is not None:
-        credit_type.max_amount = data.max_amount
-
-    if data.max_term_months is not None:
-        credit_type.max_term_months = data.max_term_months
-
-    db.commit()
-    db.refresh(credit_type)
-
-    return credit_type
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Credit types are fixed by bank policy and cannot be edited."
+    )

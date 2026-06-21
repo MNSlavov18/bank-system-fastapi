@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Details | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <h1>Bank System</h1>
+        <p class="subtitle">Client ID: {{ client_id }}</p>
+
+        <nav class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a class="active" href="/my-accounts">My Accounts</a>
+            <a href="/request-credit">Request Credit</a>
+            <a href="/docs">API Docs</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <section class="panel">
+            <div class="section-header">
+                <div>
+                    <h1>Account Details</h1>
+                    <p class="subtitle">This account belongs to your client profile.</p>
+                </div>
+                <a class="secondary-link" href="/my-accounts">Back to accounts</a>
+            </div>
+
+            <dl class="details-grid">
+                <div>
+                    <dt>IBAN</dt>
+                    <dd>{{ account.iban }}</dd>
+                </div>
+                <div>
+                    <dt>Balance</dt>
+                    <dd>{{ account.balance }} BGN</dd>
+                </div>
+                <div>
+                    <dt>Status</dt>
+                    <dd><span class="status">{{ account.status.value }}</span></dd>
+                </div>
+                <div>
+                    <dt>Opened</dt>
+                    <dd>{{ account.opened_at }}</dd>
+                </div>
+                <div>
+                    <dt>Account ID</dt>
+                    <dd>{{ account.account_id }}</dd>
+                </div>
+                <div>
+                    <dt>Client ID</dt>
+                    <dd>{{ account.client_id }}</dd>
+                </div>
+            </dl>
+        </section>
+    </main>
+</div>
+</body>
+</html>

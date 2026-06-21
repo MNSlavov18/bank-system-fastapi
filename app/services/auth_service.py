@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy.orm import Session
 
 from app.models.client import Client, IndividualClient, CorporateClient
@@ -8,15 +8,18 @@ from app.models.enums import ClientType
 from app.schemas.auth import IndividualRegisterRequest, CorporateRegisterRequest, LoginRequest
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    password_bytes = password.encode("utf-8")
+    password_hash = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+
+    return password_hash.decode("utf-8")
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
-    return pwd_context.verify(plain_password, password_hash)
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"),
+        password_hash.encode("utf-8")
+    )
 
 
 def register_individual(data: IndividualRegisterRequest, db: Session):

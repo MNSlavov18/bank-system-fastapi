@@ -1,10 +1,27 @@
 from datetime import date
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
-class IndividualRegisterRequest(BaseModel):
-    email: EmailStr
+MAX_PASSWORD_BYTES = 72
+PASSWORD_TOO_LONG_MESSAGE = (
+    "Password is too long. Please use up to 72 English letters, numbers, or symbols."
+)
+
+
+class PasswordValidationMixin(BaseModel):
     password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_length(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > MAX_PASSWORD_BYTES:
+            raise ValueError(PASSWORD_TOO_LONG_MESSAGE)
+
+        return value
+
+
+class IndividualRegisterRequest(PasswordValidationMixin):
+    email: EmailStr
     phone_number: str
     address: str
 
@@ -14,9 +31,8 @@ class IndividualRegisterRequest(BaseModel):
     birth_date: date
 
 
-class CorporateRegisterRequest(BaseModel):
+class CorporateRegisterRequest(PasswordValidationMixin):
     email: EmailStr
-    password: str
     phone_number: str
     address: str
 
@@ -25,6 +41,5 @@ class CorporateRegisterRequest(BaseModel):
     representative_name: str
 
 
-class LoginRequest(BaseModel):
+class LoginRequest(PasswordValidationMixin):
     email: EmailStr
-    password: str
