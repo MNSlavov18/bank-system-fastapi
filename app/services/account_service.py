@@ -140,3 +140,25 @@ def close_account(account_id: int, client_id: int, db: Session) -> BankAccount:
     db.refresh(account)
 
     return account
+
+def add_money_to_account(account_id: int, client_id: int, amount: Decimal, db: Session) -> BankAccount:
+    account = get_account_by_id(account_id, client_id, db)
+    
+    if account.status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Money can be added only to an active account."
+        )
+
+    if amount <= Decimal("0.00"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Amount to add must be greater than 0."
+        )
+
+    account.balance += amount
+
+    db.commit()
+    db.refresh(account)
+
+    return account

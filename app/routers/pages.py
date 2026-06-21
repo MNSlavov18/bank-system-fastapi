@@ -230,6 +230,76 @@ def my_account_detail_page(
         )
 
 
+@router.get("/my-accounts/{account_id}/add-money")
+def add_money_page(
+    account_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    user_id = request.session.get("user_id")
+
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        account = account_service.get_account_by_id(account_id, client_id, db)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="add_money.html",
+            context={
+                "account": account,
+                "client_id": client_id,
+                "user_id": user_id
+            }
+        )
+
+    except Exception as e:
+        accounts = account_service.get_accounts_by_client(client_id, db)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="my_accounts.html",
+            context={
+                "accounts": accounts,
+                "client_id": client_id,
+                "user_id": user_id,
+                "error": get_user_friendly_error(e)
+            }
+        )
+
+
+@router.post("/my-accounts/{account_id}/add-money")
+def add_money_form(
+    request: Request,
+    account_id: int,
+    amount: Decimal = Form(...),
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        account_service.add_money_to_account(account_id, client_id, Decimal(amount), db)
+
+        return RedirectResponse(url=f"/my-accounts/{account_id}", status_code=303)
+
+    except Exception as e:
+        accounts = account_service.get_accounts_by_client(client_id, db)
+        return templates.TemplateResponse(
+            request=request,
+            name="add_money.html",
+            context={
+                "account": account_service.get_account_by_id(account_id, client_id, db),
+                "client_id": client_id,
+                "user_id": request.session.get("user_id"),
+                "error": get_user_friendly_error(e)
+            }
+        )
+
+
 @router.get("/request-credit")
 def request_credit_page(
     request: Request,

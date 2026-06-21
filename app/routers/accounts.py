@@ -49,3 +49,12 @@ def close_account(
     db: Session = Depends(get_db)
 ):
     return account_service.close_account(account_id, client_id, db)
+
+@router.patch("/{account_id}/add-money", response_model=AccountResponse)
+def add_money_to_account(
+    account_id: int,
+    amount: float = Query(..., gt=0),
+    client_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    return account_service.add_money_to_account(account_id, amount, client_id, db)
