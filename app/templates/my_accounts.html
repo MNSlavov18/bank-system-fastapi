@@ -47,6 +47,7 @@
                                 <th>Opened</th>
                                 <th>Details</th>
                                 <th>Add Money</th>
+                                <th>Draw Money</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -61,6 +62,9 @@
                                     </td>
                                     <td>
                                         <a class="table-link" href="/my-accounts/{{ account.account_id }}/add-money">Add Money</a>
+                                    </td>
+                                    <td>
+                                        <a class="table-link" href="/my-accounts/{{ account.account_id }}/draw-money">Draw Money</a>
                                     </td>
                                 </tr>
                             {% endfor %}

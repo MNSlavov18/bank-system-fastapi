@@ -58,3 +58,12 @@ def add_money_to_account(
     db: Session = Depends(get_db)
 ):
     return account_service.add_money_to_account(account_id, amount, client_id, db)
+
+@router.patch("/{account_id}/remove-money", response_model=AccountResponse)
+def remove_money_from_account(
+    account_id: int,
+    amount: float = Query(..., gt=0),
+    client_id: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    return account_service.remove_money_from_account(account_id, amount, client_id, db)

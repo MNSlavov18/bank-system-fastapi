@@ -162,3 +162,31 @@ def add_money_to_account(account_id: int, client_id: int, amount: Decimal, db: S
     db.refresh(account)
 
     return account
+
+def draw_money_from_account(account_id: int, client_id: int, amount: Decimal, db: Session) -> BankAccount:
+    account = get_account_by_id(account_id, client_id, db)
+    
+    if account.status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Money can be drawn only from an active account."
+        )
+
+    if amount <= Decimal("0.00"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Amount to draw must be greater than 0."
+        )
+
+    if account.balance < amount:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Insufficient funds in the account."
+        )
+
+    account.balance -= amount
+
+    db.commit()
+    db.refresh(account)
+
+    return account
