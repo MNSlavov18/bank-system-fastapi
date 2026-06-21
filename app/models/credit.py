@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Column, Enum as SqlEnum, Integer, Numeric
+from sqlalchemy import Boolean, CheckConstraint, Column, Enum as SqlEnum, Integer, Numeric
 from sqlalchemy.orm import relationship
 
 from app.database.database import Base

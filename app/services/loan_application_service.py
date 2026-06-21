@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.account import BankAccount
-from app.models.credit import CreditType
+from app.models.failedCredit import FailedCredit
 from app.models.enums import AccountStatus, CreditTypeName, LoanApplicationStatus, LoanStatus
 from app.models.loan import Loan, LoanApplication
 from app.models.mortgage import MortgageDetails
@@ -58,11 +58,23 @@ def _validate_credit_limits(
 
 def _validate_consumer_credit(
     data: LoanApplicationCreateRequest,
-    account: BankAccount
+    account: BankAccount,
+    db: Session
 ) -> None:
     minimum_balance = _money(data.requested_amount * Decimal("0.10"))
 
     if account.balance < minimum_balance:
+        failed_credit = FailedCredit(
+            type_name=CreditTypeName.CONSUMER,
+            requested_amount=data.requested_amount,
+            requested_term_months=data.requested_term_months,
+            failure_reason="Account balance must cover at least 10% of the requested credit amount.",
+            failed_at=date.today(),
+            account_id=account.account_id,
+            client_id=account.client_id
+        )
+        db.add(failed_credit)
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account balance must cover at least 10% of the requested credit amount."
@@ -152,7 +164,7 @@ def submit_loan_application(
     if credit_type.type_name == CreditTypeName.MORTGAGE:
         _validate_mortgage_credit(data, account)
     else:
-        _validate_consumer_credit(data, account)
+        _validate_consumer_credit(data, account, db)
 
     try:
         application = LoanApplication(
