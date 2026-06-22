@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import CreditTypeName, LoanStatus
+from app.models.enums import CreditTypeName, LoanDisbursementMethod, LoanStatus
 
 
 class MortgageDetailsResponse(BaseModel):
@@ -28,6 +28,12 @@ class LoanResponse(BaseModel):
     start_date: date
     end_date: date
     status: LoanStatus
+
+    disbursement_method: LoanDisbursementMethod
+    disbursement_account_id: Optional[int] = None
+    auto_payment_enabled: bool
+    payment_account_id: Optional[int] = None
+
     mortgage_details: Optional[MortgageDetailsResponse] = None
 
 

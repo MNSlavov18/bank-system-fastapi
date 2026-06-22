@@ -31,7 +31,8 @@ class BankAccount(Base):
 
     loans = relationship(
         "Loan",
-        back_populates="account"
+        back_populates="account",
+        foreign_keys="Loan.account_id"
     )
 
     __table_args__ = (

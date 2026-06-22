@@ -38,7 +38,11 @@ def submit_loan_application(
         term_months=loan.term_months,
         start_date=loan.start_date,
         end_date=loan.end_date,
-        installments_created=len(repayments)
+        installments_created=len(repayments),
+        disbursement_method=loan.disbursement_method,
+        disbursement_account_id=loan.disbursement_account_id,
+        auto_payment_enabled=loan.auto_payment_enabled,
+        payment_account_id=loan.payment_account_id
     )
 
 
@@ -59,7 +63,11 @@ def get_client_loans(
             term_months=loan.term_months,
             loan_status=loan.status,
             start_date=loan.start_date,
-            end_date=loan.end_date
+            end_date=loan.end_date,
+            disbursement_method=loan.disbursement_method,
+            disbursement_account_id=loan.disbursement_account_id,
+            auto_payment_enabled=loan.auto_payment_enabled,
+            payment_account_id=loan.payment_account_id
         )
         for loan in loans
     ]

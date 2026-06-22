@@ -52,6 +52,15 @@ def get_repayment_plan_by_loan(
 ):
     return loan_service.get_repayment_plan_by_loan(loan_id, db)
 
+@router.patch(
+    "/{loan_id}/repayment-plan/next-unpaid/set-due-today",
+    response_model=RepaymentInstallmentResponse
+)
+def set_next_unpaid_installment_due_today(
+    loan_id: int,
+    db: Session = Depends(get_db)
+):
+    return loan_service.set_next_unpaid_installment_due_today(loan_id, db)
 
 @router.patch(
     "/{loan_id}/repayment-plan/{installment_id}/pay",
@@ -63,3 +72,14 @@ def mark_installment_as_paid(
     db: Session = Depends(get_db)
 ):
     return loan_service.mark_installment_as_paid(loan_id, installment_id, db)
+
+
+@router.patch(
+    "/{loan_id}/process-due-automatic-payments",
+    response_model=list[RepaymentInstallmentResponse]
+)
+def process_due_automatic_payments(
+    loan_id: int,
+    db: Session = Depends(get_db)
+):
+    return loan_service.process_due_automatic_payments(loan_id, db)

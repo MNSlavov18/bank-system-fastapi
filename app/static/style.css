@@ -377,6 +377,16 @@ th {
     }
 }
 
+.checkbox-row {
+    align-items: center;
+    display: flex !important;
+    gap: 10px;
+}
+
+.checkbox-row input {
+    width: auto;
+}
+
 .status.danger {
     background: #fee2e2;
     color: #991b1b;

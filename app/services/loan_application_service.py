@@ -6,21 +6,27 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.account import BankAccount
+from app.models.credit import CreditType
 from app.models.failedCredit import FailedCredit
-from app.models.enums import AccountStatus, CreditTypeName, LoanApplicationStatus, LoanStatus
+from app.models.enums import (
+    AccountStatus,
+    CreditTypeName,
+    LoanApplicationStatus,
+    LoanDisbursementMethod,
+    LoanStatus
+)
 from app.models.loan import Loan, LoanApplication
 from app.models.mortgage import MortgageDetails
 from app.models.repayment import RepaymentPlan
 from app.schemas.loan_application import LoanApplicationCreateRequest
 from app.services import account_service, credit_type_service
-from app.models.credit import CreditType
 
 
 MONEY = Decimal("0.01")
 
 
-def _money(value: Decimal) -> Decimal:
-    return value.quantize(MONEY, rounding=ROUND_HALF_UP)
+def _money(value) -> Decimal:
+    return Decimal(str(value)).quantize(MONEY, rounding=ROUND_HALF_UP)
 
 
 def _add_months(value: date, months: int) -> date:
@@ -38,6 +44,76 @@ def _validate_active_account(account: BankAccount) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Credit can be requested only for an active account."
         )
+
+
+def _get_active_client_account(
+    account_id: int,
+    client_id: int,
+    db: Session,
+    error_label: str
+) -> BankAccount:
+    account = account_service.get_account_by_id(account_id, client_id, db)
+
+    if account.status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{error_label} must be an active bank account."
+        )
+
+    return account
+
+
+def _validate_disbursement_and_payment_options(
+    data: LoanApplicationCreateRequest,
+    client_id: int,
+    db: Session
+) -> tuple[BankAccount | None, BankAccount | None]:
+    disbursement_account = None
+    payment_account = None
+
+    if data.disbursement_method == LoanDisbursementMethod.BANK_TRANSFER:
+        if data.disbursement_account_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Disbursement account is required when the credit is received by bank transfer."
+            )
+
+        disbursement_account = _get_active_client_account(
+            data.disbursement_account_id,
+            client_id,
+            db,
+            "Disbursement account"
+        )
+
+    elif data.disbursement_method == LoanDisbursementMethod.CASH:
+        if data.disbursement_account_id is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Disbursement account is not allowed when the credit is received in cash."
+            )
+
+    if data.auto_payment_enabled:
+        if data.payment_account_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment account is required when automatic payment is enabled."
+            )
+
+        payment_account = _get_active_client_account(
+            data.payment_account_id,
+            client_id,
+            db,
+            "Payment account"
+        )
+
+    else:
+        if data.payment_account_id is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment account can be selected only when automatic payment is enabled."
+            )
+
+    return disbursement_account, payment_account
 
 
 def _validate_credit_limits(
@@ -74,8 +150,10 @@ def _validate_consumer_credit(
             account_id=account.account_id,
             client_id=account.client_id
         )
+
         db.add(failed_credit)
         db.commit()
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account balance must cover at least 10% of the requested credit amount."
@@ -162,6 +240,12 @@ def submit_loan_application(
     _validate_active_account(account)
     _validate_credit_limits(data, credit_type)
 
+    disbursement_account, payment_account = _validate_disbursement_and_payment_options(
+        data,
+        client_id,
+        db
+    )
+
     if credit_type.type_name == CreditTypeName.MORTGAGE:
         _validate_mortgage_credit(data, account)
     else:
@@ -180,6 +264,7 @@ def submit_loan_application(
         db.flush()
 
         start_date = date.today()
+
         loan = Loan(
             principal_amount=data.requested_amount,
             term_months=data.requested_term_months,
@@ -187,7 +272,11 @@ def submit_loan_application(
             end_date=_add_months(start_date, data.requested_term_months),
             status=LoanStatus.ACTIVE,
             application_id=application.application_id,
-            account_id=account.account_id
+            account_id=account.account_id,
+            disbursement_method=data.disbursement_method,
+            disbursement_account_id=disbursement_account.account_id if disbursement_account else None,
+            auto_payment_enabled=data.auto_payment_enabled,
+            payment_account_id=payment_account.account_id if payment_account else None
         )
 
         db.add(loan)
@@ -195,12 +284,18 @@ def submit_loan_application(
 
         if credit_type.type_name == CreditTypeName.MORTGAGE:
             account.balance = _money(account.balance - data.down_payment)
+
             db.add(MortgageDetails(
                 loan_id=loan.loan_id,
                 property_address=data.property_address,
                 property_value=data.property_value,
                 down_payment=data.down_payment
             ))
+
+        if data.disbursement_method == LoanDisbursementMethod.BANK_TRANSFER:
+            disbursement_account.balance = _money(
+                disbursement_account.balance + data.requested_amount
+            )
 
         repayments = _create_repayment_plan(loan, credit_type.interest_rate, db)
 

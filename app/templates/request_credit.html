@@ -23,7 +23,7 @@
     <main class="content">
         <section class="panel">
             <h1>Request Credit</h1>
-            <p class="subtitle">Submit a credit request using one of your bank accounts.</p>
+            <p class="subtitle">Submit a credit request and choose how you want to receive and repay it.</p>
 
             {% if created %}
                 <div class="alert success">Credit request approved and loan created successfully.</div>
@@ -46,7 +46,7 @@
             {% else %}
                 <form class="form loan-form" method="post" action="/request-credit">
                     <label>
-                        Account
+                        Main account for credit request
                         <select name="account_id" required>
                             {% for account in accounts %}
                                 <option value="{{ account.account_id }}">
@@ -76,6 +76,48 @@
                         Requested term in months
                         <input name="requested_term_months" type="number" min="1" step="1" required>
                     </label>
+
+                    <label>
+                        How do you want to receive the credit?
+                        <select id="disbursementMethod" name="disbursement_method" required onchange="toggleDisbursementAccount()">
+                            <option value="BANK_TRANSFER">Bank transfer</option>
+                            <option value="CASH">Cash</option>
+                        </select>
+                    </label>
+
+                    <div id="disbursementAccountBox">
+                        <label>
+                            Receive credit to IBAN
+                            <select name="disbursement_account_id">
+                                {% for account in accounts %}
+                                    <option value="{{ account.account_id }}">
+                                        {{ account.iban }} - {{ account.balance }} BGN
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+
+                    <label class="checkbox-row">
+                        <input id="autoPaymentCheckbox" type="checkbox" name="auto_payment_enabled" value="true" onchange="togglePaymentAccount()">
+                        Enable automatic installment payment
+                    </label>
+
+                    <div id="paymentAccountBox" class="hidden">
+                        <label>
+                            Pay installments automatically from IBAN
+                            <select name="payment_account_id">
+                                {% for account in accounts %}
+                                    <option value="{{ account.account_id }}">
+                                        {{ account.iban }} - {{ account.balance }} BGN
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <p class="subtitle">
+                            You can still pay installments earlier manually from the loan details page.
+                        </p>
+                    </div>
 
                     <div id="mortgageFields" class="mortgage-fields hidden">
                         <label>
@@ -114,7 +156,31 @@
         }
     }
 
+    function toggleDisbursementAccount() {
+        const method = document.getElementById("disbursementMethod").value;
+        const box = document.getElementById("disbursementAccountBox");
+
+        if (method === "BANK_TRANSFER") {
+            box.classList.remove("hidden");
+        } else {
+            box.classList.add("hidden");
+        }
+    }
+
+    function togglePaymentAccount() {
+        const checkbox = document.getElementById("autoPaymentCheckbox");
+        const box = document.getElementById("paymentAccountBox");
+
+        if (checkbox.checked) {
+            box.classList.remove("hidden");
+        } else {
+            box.classList.add("hidden");
+        }
+    }
+
     toggleMortgageFields();
+    toggleDisbursementAccount();
+    togglePaymentAccount();
 </script>
 </body>
 </html>

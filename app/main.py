@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from app.services.scheduler_service import start_scheduler, stop_scheduler
 
 from app.database.database import SessionLocal
 from app.routers import auth, pages, accounts, clients, credit_types, loan_applications, loans
@@ -54,3 +55,12 @@ def home(request: Request):
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.on_event("startup")
+def on_startup():
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+def on_shutdown():
+    stop_scheduler()

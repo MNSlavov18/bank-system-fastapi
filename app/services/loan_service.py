@@ -1,8 +1,13 @@
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
+from sqlite3 import Date
+import string
 
 from fastapi import HTTPException, status
+from sqlalchemy import DateTime
 from sqlalchemy.orm import Session
 
+from app.models.account import BankAccount
 from app.models.enums import AccountStatus, LoanStatus
 from app.models.loan import Loan, LoanApplication
 from app.models.repayment import RepaymentPlan
@@ -45,6 +50,10 @@ def _loan_to_response(loan: Loan) -> dict:
         "start_date": loan.start_date,
         "end_date": loan.end_date,
         "status": loan.status,
+        "disbursement_method": loan.disbursement_method,
+        "disbursement_account_id": loan.disbursement_account_id,
+        "auto_payment_enabled": loan.auto_payment_enabled,
+        "payment_account_id": loan.payment_account_id,
         "mortgage_details": mortgage_details
     }
 
@@ -163,6 +172,13 @@ def get_loan_status(loan_id: int, db: Session) -> dict:
     }
 
 
+def _get_account_for_installment_payment(loan: Loan) -> BankAccount:
+    if loan.auto_payment_enabled and loan.payment_account is not None:
+        return loan.payment_account
+
+    return loan.account
+
+
 def mark_installment_as_paid(
     loan_id: int,
     installment_id: int,
@@ -193,7 +209,7 @@ def mark_installment_as_paid(
             detail="Installment is already paid."
         )
 
-    account = loan.account
+    account = _get_account_for_installment_payment(loan)
 
     if account.status != AccountStatus.ACTIVE:
         raise HTTPException(
@@ -225,3 +241,144 @@ def mark_installment_as_paid(
     db.refresh(repayment)
 
     return _repayment_to_response(repayment)
+
+def process_due_automatic_payments(loan_id: int, db: Session) -> list[dict]:
+    loan = get_loan_or_404(loan_id, db)
+
+    if not loan.auto_payment_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Automatic payment is not enabled for this loan."
+        )
+
+    if loan.payment_account is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No payment account is selected for this loan."
+        )
+
+    due_installments = (
+        db.query(RepaymentPlan)
+        .filter(
+            RepaymentPlan.loan_id == loan_id,
+            RepaymentPlan.is_paid == False,
+            RepaymentPlan.due_date <= date.today()
+        )
+        .order_by(RepaymentPlan.installment_number.asc())
+        .all()
+    )
+
+    paid_installments = []
+
+    for installment in due_installments:
+        amount_to_pay = _installment_amount(installment)
+
+        if loan.payment_account.balance < amount_to_pay:
+            break
+
+        loan.payment_account.balance = _money(loan.payment_account.balance - amount_to_pay)
+        installment.is_paid = True
+        paid_installments.append(installment)
+
+    unpaid_installments_count = db.query(RepaymentPlan).filter(
+        RepaymentPlan.loan_id == loan_id,
+        RepaymentPlan.is_paid == False
+    ).count()
+
+    if unpaid_installments_count == 0 and due_installments:
+        loan.status = LoanStatus.PAID
+
+    db.commit()
+
+    return [_repayment_to_response(installment) for installment in paid_installments]
+
+def set_next_unpaid_installment_due_today(
+    loan_id: int,
+    db: Session
+) -> dict:
+    loan = get_loan_or_404(loan_id, db)
+
+    if not loan.auto_payment_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Automatic payment is not enabled for this loan."
+        )
+
+    repayment = (
+        db.query(RepaymentPlan)
+        .filter(
+            RepaymentPlan.loan_id == loan_id,
+            RepaymentPlan.is_paid == False
+        )
+        .order_by(RepaymentPlan.installment_number.asc())
+        .first()
+    )
+
+    if not repayment:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="There are no unpaid installments for this loan."
+        )
+
+    repayment.due_date = date.today()
+
+    db.commit()
+    db.refresh(repayment)
+
+    return _repayment_to_response(repayment)
+
+def process_all_due_automatic_payments(db: Session) -> list[dict]:
+    loans = (
+        db.query(Loan)
+        .filter(
+            Loan.auto_payment_enabled == True,
+            Loan.payment_account_id.isnot(None),
+            Loan.status == LoanStatus.ACTIVE
+        )
+        .all()
+    )
+
+    paid_installments = []
+
+    for loan in loans:
+        if loan.payment_account is None:
+            continue
+
+        if loan.payment_account.status != AccountStatus.ACTIVE:
+            continue
+
+        due_installments = (
+            db.query(RepaymentPlan)
+            .filter(
+                RepaymentPlan.loan_id == loan.loan_id,
+                RepaymentPlan.is_paid == False,
+                RepaymentPlan.due_date <= date.today()
+            )
+            .order_by(RepaymentPlan.installment_number.asc())
+            .all()
+        )
+
+        for installment in due_installments:
+            amount_to_pay = _installment_amount(installment)
+
+            if loan.payment_account.balance < amount_to_pay:
+                break
+
+            loan.payment_account.balance = _money(
+                loan.payment_account.balance - amount_to_pay
+            )
+
+            installment.is_paid = True
+            paid_installments.append(installment)
+
+        unpaid_installments_count = db.query(RepaymentPlan).filter(
+            RepaymentPlan.loan_id == loan.loan_id,
+            RepaymentPlan.is_paid == False
+        ).count()
+
+        if unpaid_installments_count == 0:
+            loan.status = LoanStatus.PAID
+
+    db.commit()
+
+    return [_repayment_to_response(installment) for installment in paid_installments]

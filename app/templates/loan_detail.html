@@ -43,33 +43,80 @@
                     <dt>Credit Type</dt>
                     <dd>{{ loan.credit_type_name.value }}</dd>
                 </div>
+
                 <div>
                     <dt>Principal Amount</dt>
                     <dd>{{ loan.principal_amount }} BGN</dd>
                 </div>
+
                 <div>
                     <dt>Interest Rate</dt>
                     <dd>{{ loan.interest_rate }}%</dd>
                 </div>
+
                 <div>
                     <dt>Term</dt>
                     <dd>{{ loan.term_months }} months</dd>
                 </div>
+
                 <div>
                     <dt>Status</dt>
-                    <dd><span class="status">{{ loan.status.value }}</span></dd>
+                    <dd>
+                        <span class="status">{{ loan.status.value }}</span>
+                    </dd>
                 </div>
+
                 <div>
-                    <dt>Account ID</dt>
+                    <dt>Main Account ID</dt>
                     <dd>{{ loan.account_id }}</dd>
                 </div>
+
                 <div>
                     <dt>Start Date</dt>
                     <dd>{{ loan.start_date }}</dd>
                 </div>
+
                 <div>
                     <dt>End Date</dt>
                     <dd>{{ loan.end_date }}</dd>
+                </div>
+
+                <div>
+                    <dt>Disbursement Method</dt>
+                    <dd>{{ loan.disbursement_method.value }}</dd>
+                </div>
+
+                <div>
+                    <dt>Disbursement Account ID</dt>
+                    <dd>
+                        {% if loan.disbursement_account_id %}
+                            {{ loan.disbursement_account_id }}
+                        {% else %}
+                            Cash payment
+                        {% endif %}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Automatic Payment</dt>
+                    <dd>
+                        {% if loan.auto_payment_enabled %}
+                            Enabled
+                        {% else %}
+                            Disabled
+                        {% endif %}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Payment Account ID</dt>
+                    <dd>
+                        {% if loan.payment_account_id %}
+                            {{ loan.payment_account_id }}
+                        {% else %}
+                            Not selected
+                        {% endif %}
+                    </dd>
                 </div>
             </dl>
         </section>
@@ -83,10 +130,12 @@
                         <dt>Property Address</dt>
                         <dd>{{ loan.mortgage_details.property_address }}</dd>
                     </div>
+
                     <div>
                         <dt>Property Value</dt>
                         <dd>{{ loan.mortgage_details.property_value }} BGN</dd>
                     </div>
+
                     <div>
                         <dt>Down Payment</dt>
                         <dd>{{ loan.mortgage_details.down_payment }} BGN</dd>
@@ -103,22 +152,27 @@
                     <dt>Total Installments</dt>
                     <dd>{{ loan_status.total_installments }}</dd>
                 </div>
+
                 <div>
                     <dt>Paid Installments</dt>
                     <dd>{{ loan_status.paid_installments }}</dd>
                 </div>
+
                 <div>
                     <dt>Unpaid Installments</dt>
                     <dd>{{ loan_status.unpaid_installments }}</dd>
                 </div>
+
                 <div>
                     <dt>Total Paid</dt>
                     <dd>{{ loan_status.total_paid_amount }} BGN</dd>
                 </div>
+
                 <div>
                     <dt>Remaining Amount</dt>
                     <dd>{{ loan_status.remaining_amount }} BGN</dd>
                 </div>
+
                 <div>
                     <dt>Next Due Date</dt>
                     <dd>
@@ -134,7 +188,9 @@
 
         <section class="panel">
             <h2>Repayment Plan</h2>
-            <p class="subtitle">Each installment contains principal part, interest part and remaining balance.</p>
+            <p class="subtitle">
+                Each installment contains principal part, interest part and remaining balance.
+            </p>
 
             {% if repayment_plan %}
                 <div class="table-wrap">
@@ -151,6 +207,7 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             {% for installment in repayment_plan %}
                                 <tr>
@@ -160,6 +217,7 @@
                                     <td>{{ installment.principal_part }} BGN</td>
                                     <td>{{ installment.interest_part }} BGN</td>
                                     <td>{{ installment.remaining_balance }} BGN</td>
+
                                     <td>
                                         {% if installment.is_paid %}
                                             <span class="status">PAID</span>
@@ -167,10 +225,17 @@
                                             <span class="status danger">UNPAID</span>
                                         {% endif %}
                                     </td>
+
                                     <td>
                                         {% if not installment.is_paid and loan.status.value == "ACTIVE" %}
                                             <form method="post" action="/my-loans/{{ loan.loan_id }}/repayment-plan/{{ installment.installment_id }}/pay">
-                                                <button class="small-button" type="submit">Pay</button>
+                                                <button class="small-button" type="submit">
+                                                    {% if loan.auto_payment_enabled %}
+                                                        Pay Early
+                                                    {% else %}
+                                                        Pay
+                                                    {% endif %}
+                                                </button>
                                             </form>
                                         {% else %}
                                             -

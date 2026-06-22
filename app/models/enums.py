@@ -27,3 +27,8 @@ class LoanStatus(str, Enum):
 class CreditTypeName(str, Enum):
     CONSUMER = "CONSUMER"
     MORTGAGE = "MORTGAGE"
+
+
+class LoanDisbursementMethod(str, Enum):
+    CASH = "CASH"
+    BANK_TRANSFER = "BANK_TRANSFER"

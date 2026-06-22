@@ -1,10 +1,10 @@
 from datetime import date
 
-from sqlalchemy import CheckConstraint, Column, Date, Enum as SqlEnum, ForeignKey, Integer, Numeric
+from sqlalchemy import Boolean, CheckConstraint, Column, Date, Enum as SqlEnum, ForeignKey, Integer, Numeric
 from sqlalchemy.orm import relationship
 
 from app.database.database import Base
-from app.models.enums import LoanApplicationStatus, LoanStatus
+from app.models.enums import LoanApplicationStatus, LoanDisbursementMethod, LoanStatus
 
 
 class LoanApplication(Base):
@@ -73,10 +73,37 @@ class Loan(Base):
         unique=True
     )
 
+    # Main account used for credit request checks / down payment / fallback manual payment.
     account_id = Column(
         Integer,
         ForeignKey("bank_accounts.account_id"),
         nullable=False
+    )
+
+    disbursement_method = Column(
+        SqlEnum(LoanDisbursementMethod),
+        nullable=False,
+        default=LoanDisbursementMethod.BANK_TRANSFER
+    )
+
+    # Account where the loan amount is received when method is BANK_TRANSFER.
+    disbursement_account_id = Column(
+        Integer,
+        ForeignKey("bank_accounts.account_id"),
+        nullable=True
+    )
+
+    auto_payment_enabled = Column(
+        Boolean,
+        nullable=False,
+        default=False
+    )
+
+    # Account used for automatic installments.
+    payment_account_id = Column(
+        Integer,
+        ForeignKey("bank_accounts.account_id"),
+        nullable=True
     )
 
     application = relationship(
@@ -86,7 +113,18 @@ class Loan(Base):
 
     account = relationship(
         "BankAccount",
-        back_populates="loans"
+        back_populates="loans",
+        foreign_keys=[account_id]
+    )
+
+    disbursement_account = relationship(
+        "BankAccount",
+        foreign_keys=[disbursement_account_id]
+    )
+
+    payment_account = relationship(
+        "BankAccount",
+        foreign_keys=[payment_account_id]
     )
 
     mortgage_details = relationship(
