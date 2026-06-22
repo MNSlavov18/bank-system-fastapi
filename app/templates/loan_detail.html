@@ -68,8 +68,13 @@
                 </div>
 
                 <div>
-                    <dt>Main Account ID</dt>
+                    <dt>Loan Account ID</dt>
                     <dd>{{ loan.account_id }}</dd>
+                </div>
+
+                <div>
+                    <dt>Loan Account IBAN</dt>
+                    <dd>{{ loan.loan_account_iban or "N/A" }}</dd>
                 </div>
 
                 <div>
@@ -120,6 +125,41 @@
                     </dd>
                 </div>
             </dl>
+        </section>
+
+        <section class="panel">
+            <div class="section-header">
+                <div>
+                    <h2>Loan Progress</h2>
+                    <p class="subtitle">Visual representation of paid and remaining loan installments.</p>
+                </div>
+            </div>
+
+            <div class="progress-grid">
+                <div class="progress-card">
+                    <dt>Total Installments</dt>
+                    <dd>{{ loan_status.total_installments }}</dd>
+                </div>
+                <div class="progress-card">
+                    <dt>Paid Installments</dt>
+                    <dd>{{ loan_status.paid_installments }} ({{ loan_status.paid_percentage }}%)</dd>
+                </div>
+                <div class="progress-card">
+                    <dt>Unpaid Installments</dt>
+                    <dd>{{ loan_status.unpaid_installments }} ({{ loan_status.unpaid_percentage }}%)</dd>
+                </div>
+            </div>
+
+            <div class="progress-bar-card">
+                <div class="progress-bar-label">Installment completion</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: {{ loan_status.paid_percentage }}%"></div>
+                </div>
+                <div class="progress-bar-meta">
+                    <span class="progress-chip paid-chip">Paid {{ loan_status.paid_percentage }}%</span>
+                    <span class="progress-chip remaining-chip">Remaining {{ loan_status.unpaid_percentage }}%</span>
+                </div>
+            </div>
         </section>
 
         {% if loan.mortgage_details %}

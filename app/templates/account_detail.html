@@ -31,6 +31,14 @@
                 <a class="secondary-link" href="/my-accounts">Back to accounts</a>
             </div>
 
+            {% if error %}
+                <div class="alert error">{{ error }}</div>
+            {% endif %}
+
+            {% if transferred %}
+                <div class="alert success">Transfer completed successfully.</div>
+            {% endif %}
+
             <dl class="details-grid">
                 <div>
                     <dt>IBAN</dt>
@@ -57,6 +65,12 @@
                     <dd>{{ account.client_id }}</dd>
                 </div>
             </dl>
+
+            {% if account.balance == 0 and account.status.value == 'ACTIVE' %}
+                <form method="post" action="/my-accounts/{{ account.account_id }}/close">
+                    <button class="primary" type="submit">Close Account</button>
+                </form>
+            {% endif %}
         </section>
     </main>
 </div>

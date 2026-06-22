@@ -34,11 +34,19 @@
                 <div class="alert success">New account opened successfully.</div>
             {% endif %}
 
+            {% if transferred %}
+                <div class="alert success">Money transferred successfully.</div>
+            {% endif %}
+
+            {% if closed %}
+                <div class="alert success">Account closed successfully.</div>
+            {% endif %}
+
             {% if error %}
                 <div class="alert error">{{ error }}</div>
             {% endif %}
 
-            {% if accounts %}
+            {% if active_accounts %}
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -48,12 +56,14 @@
                                 <th>Status</th>
                                 <th>Opened</th>
                                 <th>Details</th>
-                                <th>Add Money</th>
-                                <th>Draw Money</th>
+                                <th>Add</th>
+                                <th>Draw</th>
+                                <th>Transfer</th>
+                                <th>Close</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for account in accounts %}
+                            {% for account in active_accounts %}
                                 <tr>
                                     <td>{{ account.iban }}</td>
                                     <td>{{ account.balance }} BGN</td>
@@ -63,10 +73,22 @@
                                         <a class="table-link" href="/my-accounts/{{ account.account_id }}">View</a>
                                     </td>
                                     <td>
-                                        <a class="table-link" href="/my-accounts/{{ account.account_id }}/add-money">Add Money</a>
+                                        <a class="table-link" href="/my-accounts/{{ account.account_id }}/add-money">Add</a>
                                     </td>
                                     <td>
-                                        <a class="table-link" href="/my-accounts/{{ account.account_id }}/draw-money">Draw Money</a>
+                                        <a class="table-link" href="/my-accounts/{{ account.account_id }}/draw-money">Draw</a>
+                                    </td>
+                                    <td>
+                                        <a class="table-link" href="/my-accounts/{{ account.account_id }}/transfer">Transfer</a>
+                                    </td>
+                                    <td>
+                                        {% if account.balance == 0 %}
+                                            <form method="post" action="/my-accounts/{{ account.account_id }}/close">
+                                                <button class="table-link" type="submit">Close</button>
+                                            </form>
+                                        {% else %}
+                                            -
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -75,9 +97,47 @@
                 </div>
             {% else %}
                 <div class="empty-state">
-                    <h2>No accounts yet</h2>
-                    <p class="subtitle">Open your first bank account to start using the system.</p>
+                    <h2>No active accounts</h2>
+                    <p class="subtitle">Open a new account to start banking.</p>
                 </div>
+            {% endif %}
+
+            {% if removed_accounts %}
+                <section class="panel">
+                    <div class="section-header">
+                        <div>
+                            <h2>Removed Accounts</h2>
+                            <p class="subtitle">Closed accounts are listed here for your records.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IBAN</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th>Opened</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for account in removed_accounts %}
+                                    <tr>
+                                        <td>{{ account.iban }}</td>
+                                        <td>{{ account.balance }} BGN</td>
+                                        <td><span class="status">{{ account.status.value }}</span></td>
+                                        <td>{{ account.opened_at }}</td>
+                                        <td>
+                                            <a class="table-link" href="/my-accounts/{{ account.account_id }}">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             {% endif %}
         </section>
 

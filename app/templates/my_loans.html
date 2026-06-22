@@ -46,6 +46,7 @@
                             <tr>
                                 <th>Loan ID</th>
                                 <th>Credit Type</th>
+                                <th>Account IBAN</th>
                                 <th>Amount</th>
                                 <th>Term</th>
                                 <th>Status</th>
@@ -59,6 +60,7 @@
                                 <tr>
                                     <td>{{ loan.loan_id }}</td>
                                     <td>{{ loan.credit_type_name.value }}</td>
+                                    <td>{{ loan.loan_account_iban or "N/A" }}</td>
                                     <td>{{ loan.principal_amount }} BGN</td>
                                     <td>{{ loan.term_months }} months</td>
                                     <td><span class="status">{{ loan.status.value }}</span></td>
@@ -78,6 +80,46 @@
                     <p class="subtitle">You do not have any approved loans yet.</p>
                     <a class="secondary-link" href="/request-credit">Request credit</a>
                 </div>
+            {% endif %}
+
+            {% if failed_credits %}
+                <section class="panel">
+                    <div class="section-header">
+                        <div>
+                            <h2>Failed Loan Requests</h2>
+                            <p class="subtitle">These credit requests failed and were recorded for review.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Request ID</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Term</th>
+                                    <th>Account IBAN</th>
+                                    <th>Reason</th>
+                                    <th>Failed At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for failed in failed_credits %}
+                                    <tr>
+                                        <td>{{ failed.failed_credit_id }}</td>
+                                        <td>{{ failed.type_name.value }}</td>
+                                        <td>{{ failed.requested_amount }} BGN</td>
+                                        <td>{{ failed.requested_term_months }} months</td>
+                                        <td>{{ failed.account_iban or failed.account_id }}</td>
+                                        <td>{{ failed.failure_reason }}</td>
+                                        <td>{{ failed.failed_at }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             {% endif %}
         </section>
     </main>

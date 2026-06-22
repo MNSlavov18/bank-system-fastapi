@@ -264,6 +264,8 @@ def profile_update_form(
 def my_accounts_page(
     request: Request,
     opened: bool = False,
+    transferred: bool = False,
+    closed: bool = False,
     db: Session = Depends(get_db)
 ):
     client_id = request.session.get("client_id")
@@ -273,16 +275,21 @@ def my_accounts_page(
         return RedirectResponse(url="/login", status_code=303)
 
     accounts = account_service.get_accounts_by_client(client_id, db)
+    active_accounts = [account for account in accounts if account.status.value == "ACTIVE"]
+    removed_accounts = [account for account in accounts if account.status.value == "CLOSED"]
 
     return templates.TemplateResponse(
         request=request,
         name="my_accounts.html",
         context={
-            "accounts": accounts,
+            "active_accounts": active_accounts,
+            "removed_accounts": removed_accounts,
             "client_id": client_id,
             "user_id": user_id,
             "client_display_name": get_client_display_name(client_id, db),
-            "opened": opened
+            "opened": opened,
+            "transferred": transferred,
+            "closed": closed
         }
     )
 
@@ -291,6 +298,7 @@ def my_accounts_page(
 def my_account_detail_page(
     account_id: int,
     request: Request,
+    transferred: bool = False,
     db: Session = Depends(get_db)
 ):
     client_id = request.session.get("client_id")
@@ -309,7 +317,8 @@ def my_account_detail_page(
                 "account": account,
                 "client_id": client_id,
                 "user_id": user_id,
-                "client_display_name": get_client_display_name(client_id, db)
+                "client_display_name": get_client_display_name(client_id, db),
+                "transferred": transferred
             }
         )
 
@@ -458,12 +467,122 @@ def draw_money_form(
         return RedirectResponse(url=f"/my-accounts/{account_id}", status_code=303)
 
     except Exception as e:
-        accounts = account_service.get_accounts_by_client(client_id, db)
         return templates.TemplateResponse(
             request=request,
             name="draw_money.html",
             context={
                 "account": account_service.get_account_by_id(account_id, client_id, db),
+                "client_id": client_id,
+                "user_id": request.session.get("user_id"),
+                "client_display_name": get_client_display_name(client_id, db),
+                "error": get_user_friendly_error(e)
+            }
+        )
+
+
+@router.get("/my-accounts/{account_id}/transfer")
+def transfer_money_page(
+    account_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    user_id = request.session.get("user_id")
+
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        account = account_service.get_account_by_id(account_id, client_id, db)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="transfer_money.html",
+            context={
+                "account": account,
+                "client_id": client_id,
+                "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db)
+            }
+        )
+
+    except Exception as e:
+        accounts = account_service.get_accounts_by_client(client_id, db)
+        return templates.TemplateResponse(
+            request=request,
+            name="my_accounts.html",
+            context={
+                "accounts": accounts,
+                "client_id": client_id,
+                "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db),
+                "error": get_user_friendly_error(e)
+            }
+        )
+
+
+@router.post("/my-accounts/{account_id}/transfer")
+def transfer_money_form(
+    request: Request,
+    account_id: int,
+    target_iban: str = Form(...),
+    amount: Decimal = Form(...),
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        account_service.transfer_money_by_iban(
+            account_id,
+            client_id,
+            target_iban,
+            Decimal(amount),
+            db
+        )
+
+        return RedirectResponse(url=f"/my-accounts/{account_id}?transferred=true", status_code=303)
+
+    except Exception as e:
+        return templates.TemplateResponse(
+            request=request,
+            name="transfer_money.html",
+            context={
+                "account": account_service.get_account_by_id(account_id, client_id, db),
+                "client_id": client_id,
+                "user_id": request.session.get("user_id"),
+                "client_display_name": get_client_display_name(client_id, db),
+                "error": get_user_friendly_error(e)
+            }
+        )
+
+
+@router.post("/my-accounts/{account_id}/close")
+def close_account_form(
+    request: Request,
+    account_id: int,
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        account_service.close_account(account_id, client_id, db)
+        return RedirectResponse(url="/my-accounts?closed=true", status_code=303)
+
+    except Exception as e:
+        try:
+            account = account_service.get_account_by_id(account_id, client_id, db)
+        except Exception:
+            account = None
+
+        return templates.TemplateResponse(
+            request=request,
+            name="account_detail.html",
+            context={
+                "account": account,
                 "client_id": client_id,
                 "user_id": request.session.get("user_id"),
                 "client_display_name": get_client_display_name(client_id, db),
@@ -608,12 +727,14 @@ def my_loans_page(
         return RedirectResponse(url="/login", status_code=303)
 
     loans = loan_service.get_loans_by_client(client_id, db)
+    failed_credits = loan_service.get_failed_credits_by_client(client_id, db)
 
     return templates.TemplateResponse(
         request=request,
         name="my_loans.html",
         context={
             "loans": loans,
+            "failed_credits": failed_credits,
             "client_id": client_id,
             "user_id": user_id,
             "client_display_name": get_client_display_name(client_id, db),

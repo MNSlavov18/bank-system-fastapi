@@ -4,7 +4,7 @@ from sqlalchemy import CheckConstraint, Column, Date, Enum as SqlEnum, ForeignKe
 
 from app.database.database import Base
 from app.models.enums import CreditTypeName
-
+from sqlalchemy.orm import relationship
 
 class FailedCredit(Base):
     __tablename__ = "failed_credits"
@@ -17,6 +17,12 @@ class FailedCredit(Base):
     failed_at = Column(Date, nullable=False, default=date.today)
     account_id = Column(Integer, ForeignKey("bank_accounts.account_id"), nullable=False)
     client_id = Column(Integer, ForeignKey("clients.client_id"), nullable=False)
+
+    account = relationship(
+        "BankAccount",
+        backref="failed_credits",
+        foreign_keys=[account_id]
+    )
 
     __table_args__ = (
         CheckConstraint("requested_amount > 0", name="check_failed_requested_amount_positive"),

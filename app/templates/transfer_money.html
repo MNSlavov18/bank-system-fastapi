@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transfer Money | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <h1>Bank System</h1>
+        <p class="subtitle">Welcome {{ client_display_name }}</p>
+
+        <nav class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/profile">Profile</a>
+            <a href="/my-accounts">My Accounts</a>
+            <a href="/request-credit">Request Credit</a>
+            <a href="/my-loans">My Loans</a>
+            <a href="/docs">API Docs</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <section class="panel">
+            <div class="section-header">
+                <div>
+                    <h1>Transfer Money</h1>
+                    <p class="subtitle">Transfer funds from this account by IBAN.</p>
+                </div>
+                <a class="secondary-link" href="/my-accounts/{{ account.account_id }}">Back to account</a>
+            </div>
+
+            {% if error %}
+                <div class="alert error">{{ error }}</div>
+            {% endif %}
+
+            <form class="form" method="post" action="/my-accounts/{{ account.account_id }}/transfer">
+                <label>Source IBAN</label>
+                <div class="field">{{ account.iban }}</div>
+
+                <label>Current balance</label>
+                <div class="field">{{ account.balance }} BGN</div>
+
+                <label for="target_iban">Target IBAN</label>
+                <input id="target_iban" name="target_iban" type="text" required>
+
+                <label for="amount">Amount</label>
+                <input id="amount" name="amount" type="number" min="0.01" step="0.01" required>
+
+                <button class="primary" type="submit">Transfer</button>
+            </form>
+        </section>
+    </main>
+</div>
+</body>
+</html>

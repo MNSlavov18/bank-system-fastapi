@@ -361,6 +361,110 @@ th {
     overflow-wrap: anywhere;
 }
 
+.progress-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-bottom: 18px;
+}
+
+.progress-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.progress-card dt {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.progress-card dd {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f766e;
+}
+
+.progress-bar-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.progress-bar-label {
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 10px;
+}
+
+.progress-bar-bg {
+    background: #e2e8f0;
+    border-radius: 999px;
+    height: 18px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    background: linear-gradient(135deg, #16a34a, #0f766e);
+    height: 100%;
+    width: 0;
+    transition: width 0.4s ease;
+}
+
+.progress-bar-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.progress-chip {
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.paid-chip {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.remaining-chip {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.table-link,
+.secondary-link {
+    color: #0369a1;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.table-link:hover,
+.secondary-link:hover {
+    text-decoration: underline;
+}
+
+.button-link {
+    background: none;
+    border: none;
+    color: #0369a1;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+
+.button-link:hover {
+    text-decoration: underline;
+}
+
 .empty-state {
     background: #f8fafc;
     border: 1px dashed #93c5fd;

@@ -64,6 +64,7 @@ def _loan_to_response(loan: Loan) -> dict:
         "application_id": loan.application_id,
         "client_id": application.client_id,
         "account_id": loan.account_id,
+        "loan_account_iban": loan.account.iban if loan.account else None,
         "credit_type_id": application.credit_type_id,
         "credit_type_name": credit_type.type_name,
         "principal_amount": loan.principal_amount,
@@ -138,6 +139,31 @@ def get_loans_by_client(client_id: int, db: Session) -> list[dict]:
     return [_loan_to_response(loan) for loan in loans]
 
 
+def get_failed_credits_by_client(client_id: int, db: Session) -> list[dict]:
+    from app.models.failedCredit import FailedCredit
+
+    failed_credits = (
+        db.query(FailedCredit)
+        .filter(FailedCredit.client_id == client_id)
+        .order_by(FailedCredit.failed_credit_id.desc())
+        .all()
+    )
+
+    return [
+        {
+            "failed_credit_id": failed_credit.failed_credit_id,
+            "type_name": failed_credit.type_name,
+            "requested_amount": failed_credit.requested_amount,
+            "requested_term_months": failed_credit.requested_term_months,
+            "failure_reason": failed_credit.failure_reason,
+            "failed_at": failed_credit.failed_at,
+            "account_id": failed_credit.account_id,
+            "account_iban": failed_credit.account.iban if failed_credit.account else None
+        }
+        for failed_credit in failed_credits
+    ]
+
+
 def get_repayment_plan_by_loan(loan_id: int, db: Session) -> list[dict]:
     get_loan_or_404(loan_id, db)
 
@@ -186,17 +212,28 @@ def get_loan_status(loan_id: int, db: Session) -> dict:
     if unpaid_repayments:
         next_due_date = unpaid_repayments[0].due_date
 
+    total_installments = len(repayments)
+    paid_installments = len(paid_repayments)
+    paid_percentage = Decimal("0.00")
+    unpaid_percentage = Decimal("0.00")
+
+    if total_installments > 0:
+        paid_percentage = _money(Decimal(paid_installments) / Decimal(total_installments) * Decimal("100"))
+        unpaid_percentage = _money(Decimal(len(unpaid_repayments)) / Decimal(total_installments) * Decimal("100"))
+
     return {
         "loan_id": loan.loan_id,
         "status": loan.status,
         "principal_amount": loan.principal_amount,
         "term_months": loan.term_months,
-        "total_installments": len(repayments),
-        "paid_installments": len(paid_repayments),
+        "total_installments": total_installments,
+        "paid_installments": paid_installments,
         "unpaid_installments": len(unpaid_repayments),
         "total_paid_amount": _money(total_paid_amount),
         "remaining_amount": _money(remaining_amount),
-        "next_due_date": next_due_date
+        "next_due_date": next_due_date,
+        "paid_percentage": paid_percentage,
+        "unpaid_percentage": unpaid_percentage
     }
 
 

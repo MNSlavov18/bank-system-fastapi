@@ -190,3 +190,69 @@ def draw_money_from_account(account_id: int, client_id: int, amount: Decimal, db
     db.refresh(account)
 
     return account
+
+
+def _get_account_by_iban(iban: str, db: Session) -> BankAccount:
+    normalized_iban = iban.replace(" ", "").upper()
+    account = db.query(BankAccount).filter(
+        BankAccount.iban == normalized_iban
+    ).first()
+
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Target account with this IBAN does not exist."
+        )
+
+    return account
+
+
+def transfer_money_by_iban(
+    account_id: int,
+    client_id: int,
+    target_iban: str,
+    amount: Decimal,
+    db: Session
+) -> BankAccount:
+    sender = get_account_by_id(account_id, client_id, db)
+
+    if sender.status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Money can be transferred only from an active account."
+        )
+
+    if amount <= Decimal("0.00"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Transfer amount must be greater than 0."
+        )
+
+    if sender.balance < amount:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Insufficient funds in the account to complete the transfer."
+        )
+
+    target = _get_account_by_iban(target_iban, db)
+
+    if target.account_id == sender.account_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot transfer money to the same account."
+        )
+
+    if target.status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Target account must be active to receive transfers."
+        )
+
+    sender.balance -= amount
+    target.balance += amount
+
+    db.commit()
+    db.refresh(sender)
+    db.refresh(target)
+
+    return sender
