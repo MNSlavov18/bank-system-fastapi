@@ -8,10 +8,11 @@
 <div class="app-shell">
     <aside class="sidebar">
         <h1>Bank System</h1>
-        <p class="subtitle">Client ID: {{ client_id }}</p>
+        <p class="subtitle">Welcome {{ client_display_name }}</p>
 
         <nav class="menu">
             <a href="/dashboard">Dashboard</a>
+            <a href="/profile">Profile</a>
             <a href="/my-accounts">My Accounts</a>
             <a href="/request-credit">Request Credit</a>
             <a class="active" href="/my-loans">My Loans</a>
@@ -202,6 +203,8 @@
                                 <th>Installment</th>
                                 <th>Principal</th>
                                 <th>Interest</th>
+                                <th>Fee</th>
+                                <th>Total Due</th>
                                 <th>Remaining</th>
                                 <th>Status</th>
                                 <th>Action</th>
@@ -210,12 +213,30 @@
 
                         <tbody>
                             {% for installment in repayment_plan %}
-                                <tr>
+                                <tr class="{% if not installment.is_paid and installment.due_date < today %}overdue-row{% endif %}">
                                     <td>{{ installment.installment_number }}</td>
-                                    <td>{{ installment.due_date }}</td>
+                                    <td>
+                                        {{ installment.due_date }}
+                                        {% if not installment.is_paid and installment.due_date < today %}
+                                            <span class="due-label overdue-label">Overdue</span>
+                                            {% if installment.overdue_fee > 0 %}
+                                                <span class="due-label fee-label">Fee after {{ installment.overdue_days }} days</span>
+                                            {% endif %}
+                                        {% elif not installment.is_paid and installment.due_date == today %}
+                                            <span class="due-label due-today-label">Due today</span>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ installment.installment_amount }} BGN</td>
                                     <td>{{ installment.principal_part }} BGN</td>
                                     <td>{{ installment.interest_part }} BGN</td>
+                                    <td>
+                                        {% if installment.overdue_fee > 0 %}
+                                            <span class="fee-amount">{{ installment.overdue_fee }} BGN</span>
+                                        {% else %}
+                                            0.00 BGN
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ installment.total_amount_due }} BGN</td>
                                     <td>{{ installment.remaining_balance }} BGN</td>
 
                                     <td>
@@ -229,8 +250,10 @@
                                     <td>
                                         {% if not installment.is_paid and loan.status.value == "ACTIVE" %}
                                             <form method="post" action="/my-loans/{{ loan.loan_id }}/repayment-plan/{{ installment.installment_id }}/pay">
-                                                <button class="small-button" type="submit">
-                                                    {% if loan.auto_payment_enabled %}
+                                                <button class="small-button {% if installment.due_date < today %}danger-button{% endif %}" type="submit">
+                                                    {% if installment.due_date < today %}
+                                                        Pay overdue
+                                                    {% elif installment.due_date > today %}
                                                         Pay Early
                                                     {% else %}
                                                         Pay

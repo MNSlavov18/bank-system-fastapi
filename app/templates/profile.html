@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <h1>Bank System</h1>
+        <p class="subtitle">Welcome {{ client_display_name }}</p>
+
+        <nav class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a class="active" href="/profile">Profile</a>
+            <a href="/my-accounts">My Accounts</a>
+            <a href="/request-credit">Request Credit</a>
+            <a href="/my-loans">My Loans</a>
+            <a href="/docs">API Docs</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <section class="panel">
+            <div class="section-header">
+                <div>
+                    <h1>Profile</h1>
+                    <p class="subtitle">View your client details and update contact information.</p>
+                </div>
+            </div>
+
+            {% if updated %}
+                <div class="alert success">Profile updated successfully.</div>
+            {% endif %}
+
+            {% if error %}
+                <div class="alert error">{{ error }}</div>
+            {% endif %}
+
+            <form class="form profile-form" method="post" action="/profile">
+                <div class="profile-grid">
+                    <label>
+                        Client type
+                        <input value="{{ client.client_type.value }}" disabled>
+                    </label>
+
+                    <label>
+                        Email
+                        <input name="email" type="email" value="{{ client.email }}" required>
+                    </label>
+
+                    <label>
+                        Phone number
+                        <input name="phone_number" value="{{ client.phone_number }}" minlength="5" maxlength="20" required>
+                    </label>
+
+                    <label>
+                        Address
+                        <input name="address" value="{{ client.address }}" minlength="3" maxlength="255" required>
+                    </label>
+
+                    {% if client.individual_client %}
+                        <label>
+                            EGN
+                            <input value="{{ client.individual_client.egn }}" disabled>
+                        </label>
+
+                        <label>
+                            Birth date
+                            <input value="{{ client.individual_client.birth_date }}" disabled>
+                        </label>
+
+                        <label>
+                            First name
+                            <input name="first_name" value="{{ client.individual_client.first_name }}" minlength="2" maxlength="100" required>
+                        </label>
+
+                        <label>
+                            Last name
+                            <input name="last_name" value="{{ client.individual_client.last_name }}" minlength="2" maxlength="100" required>
+                        </label>
+                    {% endif %}
+
+                    {% if client.corporate_client %}
+                        <label>
+                            EIK
+                            <input value="{{ client.corporate_client.eik }}" disabled>
+                        </label>
+
+                        <label>
+                            Company name
+                            <input name="name" value="{{ client.corporate_client.name }}" minlength="2" maxlength="150" required>
+                        </label>
+
+                        <label>
+                            Representative name
+                            <input name="representative_name" value="{{ client.corporate_client.representative_name }}" minlength="2" maxlength="200" required>
+                        </label>
+                    {% endif %}
+                </div>
+
+                <button class="primary" type="submit">Save Profile</button>
+            </form>
+        </section>
+    </main>
+</div>
+</body>
+</html>

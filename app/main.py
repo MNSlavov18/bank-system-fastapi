@@ -6,6 +6,7 @@ from app.services.scheduler_service import start_scheduler, stop_scheduler
 
 from app.database.database import SessionLocal
 from app.routers import auth, pages, accounts, clients, credit_types, loan_applications, loans
+from app.core.config import settings
 from app.services.credit_type_service import seed_credit_types
 
 app = FastAPI(
@@ -16,7 +17,7 @@ app = FastAPI(
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key="bank-system-secret-key"
+    secret_key=settings.session_secret_key
 )
 
 app.include_router(auth.router)

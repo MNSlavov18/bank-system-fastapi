@@ -135,25 +135,11 @@ def _validate_credit_limits(
 
 def _validate_consumer_credit(
     data: LoanApplicationCreateRequest,
-    account: BankAccount,
-    db: Session
+    account: BankAccount
 ) -> None:
     minimum_balance = _money(data.requested_amount * Decimal("0.10"))
 
     if account.balance < minimum_balance:
-        failed_credit = FailedCredit(
-            type_name=CreditTypeName.CONSUMER,
-            requested_amount=data.requested_amount,
-            requested_term_months=data.requested_term_months,
-            failure_reason="Account balance must cover at least 10% of the requested credit amount.",
-            failed_at=date.today(),
-            account_id=account.account_id,
-            client_id=account.client_id
-        )
-
-        db.add(failed_credit)
-        db.commit()
-
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account balance must cover at least 10% of the requested credit amount."
@@ -181,6 +167,27 @@ def _validate_mortgage_credit(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Requested mortgage amount cannot be higher than property value minus down payment."
         )
+
+
+def _record_failed_credit(
+    data: LoanApplicationCreateRequest,
+    account: BankAccount,
+    credit_type: CreditType,
+    failure_reason: str,
+    db: Session
+) -> None:
+    failed_credit = FailedCredit(
+        type_name=credit_type.type_name,
+        requested_amount=data.requested_amount,
+        requested_term_months=data.requested_term_months,
+        failure_reason=failure_reason[:255],
+        failed_at=date.today(),
+        account_id=account.account_id,
+        client_id=account.client_id
+    )
+
+    db.add(failed_credit)
+    db.commit()
 
 
 def _create_repayment_plan(
@@ -237,19 +244,24 @@ def submit_loan_application(
     account = account_service.get_account_by_id(data.account_id, client_id, db)
     credit_type = credit_type_service.get_credit_type_by_id(data.credit_type_id, db)
 
-    _validate_active_account(account)
-    _validate_credit_limits(data, credit_type)
+    try:
+        _validate_active_account(account)
+        _validate_credit_limits(data, credit_type)
 
-    disbursement_account, payment_account = _validate_disbursement_and_payment_options(
-        data,
-        client_id,
-        db
-    )
+        disbursement_account, payment_account = _validate_disbursement_and_payment_options(
+            data,
+            client_id,
+            db
+        )
 
-    if credit_type.type_name == CreditTypeName.MORTGAGE:
-        _validate_mortgage_credit(data, account)
-    else:
-        _validate_consumer_credit(data, account, db)
+        if credit_type.type_name == CreditTypeName.MORTGAGE:
+            _validate_mortgage_credit(data, account)
+        else:
+            _validate_consumer_credit(data, account)
+
+    except HTTPException as exc:
+        _record_failed_credit(data, account, credit_type, str(exc.detail), db)
+        raise
 
     try:
         application = LoanApplication(

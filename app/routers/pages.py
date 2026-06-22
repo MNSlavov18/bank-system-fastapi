@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from decimal import Decimal
@@ -10,11 +10,13 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.schemas.account import AccountCreateRequest
+from app.schemas.client import ClientUpdateRequest
 from app.schemas.loan_application import LoanApplicationCreateRequest
 from app.schemas.auth import IndividualRegisterRequest, CorporateRegisterRequest, LoginRequest
 from app.services import account_service
 from app.services import auth_service
 from app.services import credit_type_service
+from app.services import client_service
 from app.services import loan_application_service
 from app.services import loan_service
 
@@ -32,6 +34,26 @@ def get_user_friendly_error(error: Exception) -> str:
         return str(first_error["msg"]).removeprefix("Value error, ")
 
     return "Something went wrong. Please check your data and try again."
+
+
+def get_client_display_name(client_id: int, db: Session) -> str:
+    client = client_service.get_client_by_id(client_id, db)
+
+    if client.individual_client:
+        return f"{client.individual_client.first_name} {client.individual_client.last_name}"
+
+    if client.corporate_client:
+        return f"{client.corporate_client.name} - {client.corporate_client.representative_name}"
+
+    return f"Client {client.client_id}"
+
+
+def get_logged_in_client_context(client_id: int, user_id: int, db: Session) -> dict:
+    return {
+        "client_id": client_id,
+        "user_id": user_id,
+        "client_display_name": get_client_display_name(client_id, db)
+    }
 
 
 @router.get("/register")
@@ -148,7 +170,7 @@ def login_form(
         )
 
 @router.get("/dashboard")
-def dashboard_page(request: Request):
+def dashboard_page(request: Request, db: Session = Depends(get_db)):
     client_id = request.session.get("client_id")
     user_id = request.session.get("user_id")
 
@@ -159,10 +181,83 @@ def dashboard_page(request: Request):
         request=request,
         name="dashboard.html",
         context={
-            "client_id": client_id,
-            "user_id": user_id
+            **get_logged_in_client_context(client_id, user_id, db)
         }
     )
+
+
+@router.get("/profile")
+def profile_page(
+    request: Request,
+    updated: bool = False,
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    user_id = request.session.get("user_id")
+
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    client = client_service.get_client_by_id(client_id, db)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="profile.html",
+        context={
+            **get_logged_in_client_context(client_id, user_id, db),
+            "client": client,
+            "updated": updated
+        }
+    )
+
+
+@router.post("/profile")
+def profile_update_form(
+    request: Request,
+    email: str = Form(...),
+    phone_number: str = Form(...),
+    address: str = Form(...),
+    first_name: str = Form(default=""),
+    last_name: str = Form(default=""),
+    name: str = Form(default=""),
+    representative_name: str = Form(default=""),
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    user_id = request.session.get("user_id")
+
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        client = client_service.get_client_by_id(client_id, db)
+
+        data = ClientUpdateRequest(
+            email=email,
+            phone_number=phone_number,
+            address=address,
+            first_name=first_name or None,
+            last_name=last_name or None,
+            name=name or None,
+            representative_name=representative_name or None
+        )
+
+        client_service.update_client(client_id, data, db)
+
+        return RedirectResponse(url="/profile?updated=true", status_code=303)
+
+    except Exception as e:
+        client = client_service.get_client_by_id(client_id, db)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="profile.html",
+            context={
+                **get_logged_in_client_context(client_id, user_id, db),
+                "client": client,
+                "error": get_user_friendly_error(e)
+            }
+        )
 
 
 @router.get("/my-accounts")
@@ -186,6 +281,7 @@ def my_accounts_page(
             "accounts": accounts,
             "client_id": client_id,
             "user_id": user_id,
+            "client_display_name": get_client_display_name(client_id, db),
             "opened": opened
         }
     )
@@ -212,7 +308,8 @@ def my_account_detail_page(
             context={
                 "account": account,
                 "client_id": client_id,
-                "user_id": user_id
+                "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db)
             }
         )
 
@@ -226,6 +323,7 @@ def my_account_detail_page(
                 "accounts": accounts,
                 "client_id": client_id,
                 "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )
@@ -252,7 +350,8 @@ def add_money_page(
             context={
                 "account": account,
                 "client_id": client_id,
-                "user_id": user_id
+                "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db)
             }
         )
 
@@ -266,6 +365,7 @@ def add_money_page(
                 "accounts": accounts,
                 "client_id": client_id,
                 "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )
@@ -296,6 +396,7 @@ def add_money_form(
                 "account": account_service.get_account_by_id(account_id, client_id, db),
                 "client_id": client_id,
                 "user_id": request.session.get("user_id"),
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )
@@ -321,7 +422,8 @@ def draw_money_page(
             context={
                 "account": account,
                 "client_id": client_id,
-                "user_id": user_id
+                "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db)
             }
         )
 
@@ -335,6 +437,7 @@ def draw_money_page(
                 "accounts": accounts,
                 "client_id": client_id,
                 "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )
@@ -363,6 +466,7 @@ def draw_money_form(
                 "account": account_service.get_account_by_id(account_id, client_id, db),
                 "client_id": client_id,
                 "user_id": request.session.get("user_id"),
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )
@@ -388,6 +492,7 @@ def request_credit_page(
             "credit_types": credit_type_service.get_all_credit_types(db),
             "client_id": client_id,
             "user_id": user_id,
+            "client_display_name": get_client_display_name(client_id, db),
             "created": created
         }
     )
@@ -416,6 +521,12 @@ def request_credit_form(
         return RedirectResponse(url="/login", status_code=303)
 
     try:
+        if disbursement_method == "CASH":
+            disbursement_account_id = ""
+
+        if not auto_payment_enabled:
+            payment_account_id = ""
+
         data = LoanApplicationCreateRequest(
             account_id=account_id,
             credit_type_id=credit_type_id,
@@ -443,6 +554,7 @@ def request_credit_form(
                 "credit_types": credit_type_service.get_all_credit_types(db),
                 "client_id": client_id,
                 "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )
@@ -478,6 +590,7 @@ def open_account_form(
                 "accounts": accounts,
                 "client_id": client_id,
                 "user_id": request.session.get("user_id"),
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )
@@ -503,6 +616,7 @@ def my_loans_page(
             "loans": loans,
             "client_id": client_id,
             "user_id": user_id,
+            "client_display_name": get_client_display_name(client_id, db),
             "paid": paid
         }
     )
@@ -538,8 +652,10 @@ def my_loan_detail_page(
                 "loan": loan,
                 "repayment_plan": repayment_plan,
                 "loan_status": loan_status,
+                "today": date.today(),
                 "client_id": client_id,
-                "user_id": user_id
+                "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db)
             }
         )
 
@@ -555,6 +671,7 @@ def my_loan_detail_page(
                 "loans": loans,
                 "client_id": client_id,
                 "user_id": user_id,
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )
@@ -594,8 +711,10 @@ def pay_installment_form(
                 "loan": loan,
                 "repayment_plan": repayment_plan,
                 "loan_status": loan_status,
+                "today": date.today(),
                 "client_id": client_id,
                 "user_id": request.session.get("user_id"),
+                "client_display_name": get_client_display_name(client_id, db),
                 "error": get_user_friendly_error(e)
             }
         )

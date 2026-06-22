@@ -8,11 +8,13 @@
 <div class="app-shell">
     <aside class="sidebar">
         <h1>Bank System</h1>
-        <p class="subtitle">Client ID: {{ client_id }}</p>
+        <p class="subtitle">Welcome {{ client_display_name }}</p>
 
         <nav class="menu">
             <a class="active" href="/dashboard">Dashboard</a>
+            <a href="/profile">Profile</a>
             <a href="/my-accounts">My Accounts</a>
+            <a href="/request-credit">Request Credit</a>
             <a href="/my-loans">My Loans</a>
             <a href="/docs">API Docs</a>
             <a href="/logout">Logout</a>
@@ -29,6 +31,10 @@
             </div>
 
             <div class="dashboard-grid">
+                <a class="dashboard-tile" href="/profile">
+                    <strong>Profile</strong>
+                    <span>View and update your client details.</span>
+                </a>
                 <a class="dashboard-tile" href="/my-accounts">
                     <strong>My Accounts</strong>
                     <span>View your bank accounts and open a new one.</span>

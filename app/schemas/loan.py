@@ -45,6 +45,9 @@ class RepaymentInstallmentResponse(BaseModel):
     installment_amount: Decimal
     principal_part: Decimal
     interest_part: Decimal
+    overdue_days: int
+    overdue_fee: Decimal
+    total_amount_due: Decimal
     remaining_balance: Decimal
     is_paid: bool
 

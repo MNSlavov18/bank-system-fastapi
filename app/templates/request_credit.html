@@ -8,10 +8,11 @@
 <div class="app-shell">
     <aside class="sidebar">
         <h1>Bank System</h1>
-        <p class="subtitle">Client ID: {{ client_id }}</p>
+        <p class="subtitle">Welcome {{ client_display_name }}</p>
 
         <nav class="menu">
             <a href="/dashboard">Dashboard</a>
+            <a href="/profile">Profile</a>
             <a href="/my-accounts">My Accounts</a>
             <a class="active" href="/request-credit">Request Credit</a>
             <a href="/my-loans">My Loans</a>
@@ -88,7 +89,7 @@
                     <div id="disbursementAccountBox">
                         <label>
                             Receive credit to IBAN
-                            <select name="disbursement_account_id">
+                            <select id="disbursementAccount" name="disbursement_account_id">
                                 {% for account in accounts %}
                                     <option value="{{ account.account_id }}">
                                         {{ account.iban }} - {{ account.balance }} BGN
@@ -106,7 +107,7 @@
                     <div id="paymentAccountBox" class="hidden">
                         <label>
                             Pay installments automatically from IBAN
-                            <select name="payment_account_id">
+                            <select id="paymentAccount" name="payment_account_id" disabled>
                                 {% for account in accounts %}
                                     <option value="{{ account.account_id }}">
                                         {{ account.iban }} - {{ account.balance }} BGN
@@ -159,22 +160,28 @@
     function toggleDisbursementAccount() {
         const method = document.getElementById("disbursementMethod").value;
         const box = document.getElementById("disbursementAccountBox");
+        const select = document.getElementById("disbursementAccount");
 
         if (method === "BANK_TRANSFER") {
             box.classList.remove("hidden");
+            select.disabled = false;
         } else {
             box.classList.add("hidden");
+            select.disabled = true;
         }
     }
 
     function togglePaymentAccount() {
         const checkbox = document.getElementById("autoPaymentCheckbox");
         const box = document.getElementById("paymentAccountBox");
+        const select = document.getElementById("paymentAccount");
 
         if (checkbox.checked) {
             box.classList.remove("hidden");
+            select.disabled = false;
         } else {
             box.classList.add("hidden");
+            select.disabled = true;
         }
     }
 

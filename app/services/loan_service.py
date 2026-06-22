@@ -14,6 +14,8 @@ from app.models.repayment import RepaymentPlan
 
 
 MONEY = Decimal("0.01")
+OVERDUE_FEE_GRACE_DAYS = 10
+OVERDUE_INSTALLMENT_FEE = Decimal("10.00")
 
 
 def _money(value) -> Decimal:
@@ -22,6 +24,26 @@ def _money(value) -> Decimal:
 
 def _installment_amount(repayment: RepaymentPlan) -> Decimal:
     return _money(repayment.principal_part + repayment.interest_part)
+
+
+def _overdue_days(repayment: RepaymentPlan) -> int:
+    if repayment.is_paid:
+        return 0
+
+    days_overdue = (date.today() - repayment.due_date).days
+
+    return max(days_overdue, 0)
+
+
+def _overdue_fee(repayment: RepaymentPlan) -> Decimal:
+    if _overdue_days(repayment) >= OVERDUE_FEE_GRACE_DAYS:
+        return _money(OVERDUE_INSTALLMENT_FEE)
+
+    return Decimal("0.00")
+
+
+def _total_amount_due(repayment: RepaymentPlan) -> Decimal:
+    return _money(_installment_amount(repayment) + _overdue_fee(repayment))
 
 
 def _loan_to_response(loan: Loan) -> dict:
@@ -59,14 +81,20 @@ def _loan_to_response(loan: Loan) -> dict:
 
 
 def _repayment_to_response(repayment: RepaymentPlan) -> dict:
+    installment_amount = _installment_amount(repayment)
+    overdue_fee = _overdue_fee(repayment)
+
     return {
         "installment_id": repayment.installment_id,
         "loan_id": repayment.loan_id,
         "installment_number": repayment.installment_number,
         "due_date": repayment.due_date,
-        "installment_amount": _installment_amount(repayment),
+        "installment_amount": installment_amount,
         "principal_part": repayment.principal_part,
         "interest_part": repayment.interest_part,
+        "overdue_days": _overdue_days(repayment),
+        "overdue_fee": overdue_fee,
+        "total_amount_due": _money(installment_amount + overdue_fee),
         "remaining_balance": repayment.remaining_balance,
         "is_paid": repayment.is_paid
     }
@@ -149,7 +177,7 @@ def get_loan_status(loan_id: int, db: Session) -> dict:
     )
 
     remaining_amount = sum(
-        (_installment_amount(repayment) for repayment in unpaid_repayments),
+        (_total_amount_due(repayment) for repayment in unpaid_repayments),
         Decimal("0.00")
     )
 
@@ -217,7 +245,7 @@ def mark_installment_as_paid(
             detail="Installment can be paid only from an active account."
         )
 
-    amount_to_pay = _installment_amount(repayment)
+    amount_to_pay = _total_amount_due(repayment)
 
     if account.balance < amount_to_pay:
         raise HTTPException(
@@ -271,7 +299,7 @@ def process_due_automatic_payments(loan_id: int, db: Session) -> list[dict]:
     paid_installments = []
 
     for installment in due_installments:
-        amount_to_pay = _installment_amount(installment)
+        amount_to_pay = _total_amount_due(installment)
 
         if loan.payment_account.balance < amount_to_pay:
             break
@@ -359,7 +387,7 @@ def process_all_due_automatic_payments(db: Session) -> list[dict]:
         )
 
         for installment in due_installments:
-            amount_to_pay = _installment_amount(installment)
+            amount_to_pay = _total_amount_due(installment)
 
             if loan.payment_account.balance < amount_to_pay:
                 break

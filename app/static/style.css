@@ -116,6 +116,21 @@ input:focus {
     max-width: 720px;
 }
 
+.profile-form {
+    max-width: 920px;
+}
+
+.profile-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+input:disabled {
+    color: #64748b;
+    cursor: not-allowed;
+}
+
 .mortgage-fields {
     display: grid;
     gap: 14px;
@@ -392,6 +407,39 @@ th {
     color: #991b1b;
 }
 
+.overdue-row {
+    background: #fff1f2;
+}
+
+.due-label {
+    border-radius: 8px;
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 8px;
+    padding: 4px 7px;
+}
+
+.overdue-label {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.due-today-label {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.fee-label {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+.fee-amount {
+    color: #b91c1c;
+    font-weight: 700;
+}
+
 .small-button {
     border: none;
     border-radius: 8px;
@@ -404,4 +452,8 @@ th {
 
 .small-button:hover {
     opacity: 0.9;
+}
+
+.danger-button {
+    background: #b91c1c;
 }
