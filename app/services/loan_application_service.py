@@ -13,6 +13,7 @@ from app.models.mortgage import MortgageDetails
 from app.models.repayment import RepaymentPlan
 from app.schemas.loan_application import LoanApplicationCreateRequest
 from app.services import account_service, credit_type_service
+from app.models.credit import CreditType
 
 
 MONEY = Decimal("0.01")

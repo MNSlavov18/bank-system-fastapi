@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.database.database import SessionLocal
-from app.routers import auth, pages, accounts, clients, credit_types, loan_applications
+from app.routers import auth, pages, accounts, clients, credit_types, loan_applications, loans
 from app.services.credit_type_service import seed_credit_types
 
 app = FastAPI(
@@ -24,6 +24,8 @@ app.include_router(accounts.router)
 app.include_router(clients.router)
 app.include_router(credit_types.router)
 app.include_router(loan_applications.router)
+app.include_router(loans.router)
+
 
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
