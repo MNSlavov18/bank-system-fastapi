@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.models.account import BankAccount
 from app.models.client import Client
-from app.models.enums import AccountStatus
+from app.models.enums import AccountStatus, LoanStatus
+from app.models.loan import Loan
 from app.schemas.account import AccountCreateRequest
 
 
@@ -132,6 +133,21 @@ def close_account(account_id: int, client_id: int, db: Session) -> BankAccount:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account cannot be closed while balance is greater than 0."
+        )
+
+    active_loan = db.query(Loan).filter(
+        Loan.status == LoanStatus.ACTIVE,
+        (
+            (Loan.account_id == account_id) |
+            (Loan.disbursement_account_id == account_id) |
+            (Loan.payment_account_id == account_id)
+        )
+    ).first()
+
+    if active_loan:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account cannot be closed while there are active loans associated with it."
         )
 
     account.status = AccountStatus.CLOSED
