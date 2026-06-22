@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
-app.include_router(pages.router)
+app.include_router(pages.router)    
 app.include_router(accounts.router)
 app.include_router(clients.router)
 app.include_router(credit_types.router)

@@ -16,6 +16,7 @@ from app.services import account_service
 from app.services import auth_service
 from app.services import credit_type_service
 from app.services import loan_application_service
+from app.services import loan_service
 
 router = APIRouter()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -473,6 +474,123 @@ def open_account_form(
             }
         )
 
+@router.get("/my-loans")
+def my_loans_page(
+    request: Request,
+    paid: bool = False,
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    user_id = request.session.get("user_id")
+
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    loans = loan_service.get_loans_by_client(client_id, db)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="my_loans.html",
+        context={
+            "loans": loans,
+            "client_id": client_id,
+            "user_id": user_id,
+            "paid": paid
+        }
+    )
+
+
+@router.get("/my-loans/{loan_id}")
+def my_loan_detail_page(
+    loan_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+    user_id = request.session.get("user_id")
+
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    client_id = int(client_id)
+
+    try:
+        loan = loan_service.get_loan_by_id(loan_id, db)
+
+        if int(loan["client_id"]) != client_id:
+            return RedirectResponse(url="/my-loans", status_code=303)
+
+        repayment_plan = loan_service.get_repayment_plan_by_loan(loan_id, db)
+        loan_status = loan_service.get_loan_status(loan_id, db)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="loan_detail.html",
+            context={
+                "loan": loan,
+                "repayment_plan": repayment_plan,
+                "loan_status": loan_status,
+                "client_id": client_id,
+                "user_id": user_id
+            }
+        )
+
+    except Exception as e:
+        print("MY LOAN DETAIL ERROR:", repr(e))
+
+        loans = loan_service.get_loans_by_client(client_id, db)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="my_loans.html",
+            context={
+                "loans": loans,
+                "client_id": client_id,
+                "user_id": user_id,
+                "error": get_user_friendly_error(e)
+            }
+        )
+
+
+@router.post("/my-loans/{loan_id}/repayment-plan/{installment_id}/pay")
+def pay_installment_form(
+    loan_id: int,
+    installment_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get("client_id")
+
+    if not client_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    try:
+        loan = loan_service.get_loan_by_id(loan_id, db)
+
+        if loan["client_id"] != client_id:
+            return RedirectResponse(url="/my-loans", status_code=303)
+
+        loan_service.mark_installment_as_paid(loan_id, installment_id, db)
+
+        return RedirectResponse(url=f"/my-loans/{loan_id}?paid=true", status_code=303)
+
+    except Exception as e:
+        loan = loan_service.get_loan_by_id(loan_id, db)
+        repayment_plan = loan_service.get_repayment_plan_by_loan(loan_id, db)
+        loan_status = loan_service.get_loan_status(loan_id, db)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="loan_detail.html",
+            context={
+                "loan": loan,
+                "repayment_plan": repayment_plan,
+                "loan_status": loan_status,
+                "client_id": client_id,
+                "user_id": request.session.get("user_id"),
+                "error": get_user_friendly_error(e)
+            }
+        )
 
 @router.get("/logout")
 def logout(request: Request):

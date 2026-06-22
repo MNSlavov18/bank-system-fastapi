@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loan Details | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <h1>Bank System</h1>
+        <p class="subtitle">Client ID: {{ client_id }}</p>
+
+        <nav class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/my-accounts">My Accounts</a>
+            <a href="/request-credit">Request Credit</a>
+            <a class="active" href="/my-loans">My Loans</a>
+            <a href="/docs">API Docs</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <section class="panel">
+            <div class="section-header">
+                <div>
+                    <h1>Loan Details</h1>
+                    <p class="subtitle">Loan ID: {{ loan.loan_id }}</p>
+                </div>
+                <a class="secondary-link" href="/my-loans">Back to loans</a>
+            </div>
+
+            {% if error %}
+                <div class="alert error">{{ error }}</div>
+            {% endif %}
+
+            {% if request.query_params.get("paid") %}
+                <div class="alert success">Installment paid successfully.</div>
+            {% endif %}
+
+            <dl class="details-grid">
+                <div>
+                    <dt>Credit Type</dt>
+                    <dd>{{ loan.credit_type_name.value }}</dd>
+                </div>
+                <div>
+                    <dt>Principal Amount</dt>
+                    <dd>{{ loan.principal_amount }} BGN</dd>
+                </div>
+                <div>
+                    <dt>Interest Rate</dt>
+                    <dd>{{ loan.interest_rate }}%</dd>
+                </div>
+                <div>
+                    <dt>Term</dt>
+                    <dd>{{ loan.term_months }} months</dd>
+                </div>
+                <div>
+                    <dt>Status</dt>
+                    <dd><span class="status">{{ loan.status.value }}</span></dd>
+                </div>
+                <div>
+                    <dt>Account ID</dt>
+                    <dd>{{ loan.account_id }}</dd>
+                </div>
+                <div>
+                    <dt>Start Date</dt>
+                    <dd>{{ loan.start_date }}</dd>
+                </div>
+                <div>
+                    <dt>End Date</dt>
+                    <dd>{{ loan.end_date }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        {% if loan.mortgage_details %}
+            <section class="panel">
+                <h2>Mortgage Details</h2>
+
+                <dl class="details-grid">
+                    <div>
+                        <dt>Property Address</dt>
+                        <dd>{{ loan.mortgage_details.property_address }}</dd>
+                    </div>
+                    <div>
+                        <dt>Property Value</dt>
+                        <dd>{{ loan.mortgage_details.property_value }} BGN</dd>
+                    </div>
+                    <div>
+                        <dt>Down Payment</dt>
+                        <dd>{{ loan.mortgage_details.down_payment }} BGN</dd>
+                    </div>
+                </dl>
+            </section>
+        {% endif %}
+
+        <section class="panel">
+            <h2>Loan Status</h2>
+
+            <dl class="details-grid">
+                <div>
+                    <dt>Total Installments</dt>
+                    <dd>{{ loan_status.total_installments }}</dd>
+                </div>
+                <div>
+                    <dt>Paid Installments</dt>
+                    <dd>{{ loan_status.paid_installments }}</dd>
+                </div>
+                <div>
+                    <dt>Unpaid Installments</dt>
+                    <dd>{{ loan_status.unpaid_installments }}</dd>
+                </div>
+                <div>
+                    <dt>Total Paid</dt>
+                    <dd>{{ loan_status.total_paid_amount }} BGN</dd>
+                </div>
+                <div>
+                    <dt>Remaining Amount</dt>
+                    <dd>{{ loan_status.remaining_amount }} BGN</dd>
+                </div>
+                <div>
+                    <dt>Next Due Date</dt>
+                    <dd>
+                        {% if loan_status.next_due_date %}
+                            {{ loan_status.next_due_date }}
+                        {% else %}
+                            No unpaid installments
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="panel">
+            <h2>Repayment Plan</h2>
+            <p class="subtitle">Each installment contains principal part, interest part and remaining balance.</p>
+
+            {% if repayment_plan %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Due Date</th>
+                                <th>Installment</th>
+                                <th>Principal</th>
+                                <th>Interest</th>
+                                <th>Remaining</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for installment in repayment_plan %}
+                                <tr>
+                                    <td>{{ installment.installment_number }}</td>
+                                    <td>{{ installment.due_date }}</td>
+                                    <td>{{ installment.installment_amount }} BGN</td>
+                                    <td>{{ installment.principal_part }} BGN</td>
+                                    <td>{{ installment.interest_part }} BGN</td>
+                                    <td>{{ installment.remaining_balance }} BGN</td>
+                                    <td>
+                                        {% if installment.is_paid %}
+                                            <span class="status">PAID</span>
+                                        {% else %}
+                                            <span class="status danger">UNPAID</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if not installment.is_paid and loan.status.value == "ACTIVE" %}
+                                            <form method="post" action="/my-loans/{{ loan.loan_id }}/repayment-plan/{{ installment.installment_id }}/pay">
+                                                <button class="small-button" type="submit">Pay</button>
+                                            </form>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h2>No repayment plan</h2>
+                    <p class="subtitle">There are no generated installments for this loan.</p>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+</div>
+</body>
+</html>

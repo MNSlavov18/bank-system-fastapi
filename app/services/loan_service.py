@@ -11,8 +11,8 @@ from app.models.repayment import RepaymentPlan
 MONEY = Decimal("0.01")
 
 
-def _money(value: Decimal) -> Decimal:
-    return value.quantize(MONEY, rounding=ROUND_HALF_UP)
+def _money(value) -> Decimal:
+    return Decimal(str(value)).quantize(MONEY, rounding=ROUND_HALF_UP)
 
 
 def _installment_amount(repayment: RepaymentPlan) -> Decimal:
@@ -135,13 +135,13 @@ def get_loan_status(loan_id: int, db: Session) -> dict:
     ]
 
     total_paid_amount = sum(
-        _installment_amount(repayment)
-        for repayment in paid_repayments
+        (_installment_amount(repayment) for repayment in paid_repayments),
+        Decimal("0.00")
     )
 
     remaining_amount = sum(
-        _installment_amount(repayment)
-        for repayment in unpaid_repayments
+        (_installment_amount(repayment) for repayment in unpaid_repayments),
+        Decimal("0.00")
     )
 
     next_due_date = None

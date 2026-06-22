@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Loans | Bank System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <h1>Bank System</h1>
+        <p class="subtitle">Client ID: {{ client_id }}</p>
+
+        <nav class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/my-accounts">My Accounts</a>
+            <a href="/request-credit">Request Credit</a>
+            <a class="active" href="/my-loans">My Loans</a>
+            <a href="/docs">API Docs</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <section class="panel">
+            <div class="section-header">
+                <div>
+                    <h1>My Loans</h1>
+                    <p class="subtitle">View your active and paid loans.</p>
+                </div>
+                <a class="secondary-link" href="/request-credit">Request new credit</a>
+            </div>
+
+            {% if error %}
+                <div class="alert error">{{ error }}</div>
+            {% endif %}
+
+            {% if paid %}
+                <div class="alert success">Installment paid successfully.</div>
+            {% endif %}
+
+            {% if loans %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Credit Type</th>
+                                <th>Amount</th>
+                                <th>Term</th>
+                                <th>Status</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                                <tr>
+                                    <td>{{ loan.loan_id }}</td>
+                                    <td>{{ loan.credit_type_name.value }}</td>
+                                    <td>{{ loan.principal_amount }} BGN</td>
+                                    <td>{{ loan.term_months }} months</td>
+                                    <td><span class="status">{{ loan.status.value }}</span></td>
+                                    <td>{{ loan.start_date }}</td>
+                                    <td>{{ loan.end_date }}</td>
+                                    <td>
+                                        <a class="table-link" href="/my-loans/{{ loan.loan_id }}">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h2>No loans yet</h2>
+                    <p class="subtitle">You do not have any approved loans yet.</p>
+                    <a class="secondary-link" href="/request-credit">Request credit</a>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+</div>
+</body>
+</html>

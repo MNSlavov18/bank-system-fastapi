@@ -376,3 +376,22 @@ th {
         grid-template-columns: 1fr;
     }
 }
+
+.status.danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.small-button {
+    border: none;
+    border-radius: 8px;
+    background: #0f766e;
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+    padding: 8px 12px;
+}
+
+.small-button:hover {
+    opacity: 0.9;
+}
